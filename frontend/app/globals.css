@@ -1,9 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  /* Premium Dark Palette */
+  /* Premium Dark Palette (default) */
   --background: #020617; /* Slate 950 */
   --foreground: #f8fafc; /* Slate 50 */
+
+  /* Gradients for dark */
+  --bg-grad-1: rgba(59, 130, 246, 0.15);
+  --bg-grad-2: rgba(139, 92, 246, 0.15);
+  --bg-grad-3: rgba(6, 182, 212, 0.1);
   
   /* Primary Accents - Electric Blue / Violet */
   --primary: #3b82f6;
@@ -20,6 +25,31 @@
   --surface-border: rgba(255, 255, 255, 0.1);
 }
 
+/* Bright / Light Mode overrides */
+.light {
+  --background: #f8fafc; /* Background Light gray (provided) */
+  --foreground: #0f172a; /* Slate 900 for contrast */
+
+  /* Gentle gradients tuned to primary + accent */
+  --bg-grad-1: rgba(37,98,235,0.04); /* subtle primary blue wash */
+  --bg-grad-2: rgba(20,184,166,0.03); /* subtle accent teal wash */
+  --bg-grad-3: rgba(34,197,94,0.02); /* tiny success green hint */
+
+  /* Palette per your request */
+  --primary: #2563eb; /* Primary Blue */
+  --primary-glow: rgba(37,99,235,0.18);
+
+  --accent: #14b8a6; /* Accent Teal */
+  --accent-glow: rgba(20,184,166,0.12);
+
+  --success: #22c55e; /* Success Green */
+
+  /* Surfaces: soft, slightly warm shadows for easy-on-eyes look */
+  --surface-1: rgba(15, 23, 42, 0.03);
+  --surface-2: rgba(15, 23, 42, 0.06);
+  --surface-border: rgba(15,23,42,0.06);
+} 
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -27,12 +57,119 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* In light mode, ensure any element that uses `.text-white` becomes readable */
+.light .text-white {
+  color: var(--foreground) !important;
+}
+
+/* Make gradient masked text fallback to readable color in light mode */
+.light .bg-clip-text.text-transparent {
+  background-image: none !important;
+  color: var(--foreground) !important;
+}
+
+/* Logo should use primary in light mode for a subtle brand accent */
+.light .logo-text {
+  background-image: none !important;
+  color: var(--primary) !important;
+}
+
+/* Generic light-mode link/text corrections */
+.light .text-gray-300,
+.light .text-gray-400 {
+  color: var(--foreground) !important;
+}
+
+/* Nav link in light mode */
+.light .nav-link {
+  color: var(--foreground) !important;
+}
+.light .nav-link:hover {
+  color: var(--primary) !important;
+}
+/* Buttons that use bg-white/5 should get an appropriate surface in light mode */
+.light .bg-white\/5 {
+  background-color: rgba(255,255,255,0.6) !important;
+  color: var(--foreground) !important;
+  border-color: var(--surface-border) !important;
+}
+
+/* Inputs that use bg-black/30 (dark input bg) should be readable in light mode */
+.light .bg-black\/30 {
+  background-color: rgba(15,23,42,0.04) !important;
+  color: var(--foreground) !important;
+  border-color: var(--surface-border) !important;
+}
+
+/* When a hover would change to white, make it use primary in light mode */
+.light .hover\:text-white:hover {
+  color: var(--primary) !important;
+}
+
+/* Feature titles get a subtle primary accent in light mode */
+.light .feature-title {
+  color: var(--primary) !important;
+}
+
+/* Footer logo adjustments */
+.light .footer-logo {
+  color: var(--foreground) !important;
+}
+.light .footer-logo .h-4,
+.light .footer-logo .w-4 {
+  color: var(--primary) !important;
+}
+
+/* In light mode, ensure any element that uses `.text-white` becomes readable */
+.light .text-white {
+  color: var(--foreground) !important;
+}
+
+/* Logo text: adapt to theme (in dark it can remain a light gradient or use foreground color) */
+.logo-text {
+  font-weight: 700;
+  background: linear-gradient(to right, rgba(255,255,255,0.95), rgba(203,213,225,0.9));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.light .logo-text {
+  background: none;
+  color: var(--foreground);
+  -webkit-background-clip: inherit;
+}
+
+/* Navbar link in light mode */
+.nav-link { color: inherit; }
+.light .nav-link { color: var(--foreground) !important; }
+
+/* CTA helpers */
+.primary-cta {
+  background: var(--primary);
+  color: white;
+}
+.primary-cta:hover { filter: brightness(.95); }
+
+.secondary-cta {
+  color: white;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.light .secondary-cta {
+  color: var(--foreground) !important;
+  background: rgba(15,23,42,0.03);
+  border-color: rgba(15,23,42,0.04);
+}
+
+/* Feature card title that adapts to theme */
+.feature-title { color: var(--foreground); }
+
 body {
   background-color: var(--background);
   background-image: 
-    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, var(--bg-grad-1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, var(--bg-grad-2) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, var(--bg-grad-3) 0px, transparent 50%);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: 'Inter', sans-serif;
@@ -99,3 +236,21 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out forwards;
 }
+
+/* Theme switch animation */
+@keyframes themeSwitch {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(20deg) scale(1.05); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.theme-icon {
+  display: inline-flex;
+  transition: transform .25s ease;
+}
+
+.theme-icon.animate {
+  animation: themeSwitch .45s ease;
+}
+
+

@@ -54,7 +54,7 @@ export default function SQLDashboard() {
 
   return (
     <div className="container mx-auto px-6 py-8 max-w-7xl">
-      <div className="mb-8 border-b border-white/10 pb-4">
+      <div className="mb-8 border-b border-white/10 pb-4 mt-18">
         <h1 className="text-3xl font-bold text-white">
           SQL Mastery
         </h1>
@@ -81,7 +81,7 @@ export default function SQLDashboard() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 mt-9">
             <div className="grid gap-6">
                 {currentChapters.map((chapter) => (
                 <div key={chapter.id} className="glass p-8 rounded-2xl border border-white/5 hover:border-blue-500/30 transition-all duration-300">
