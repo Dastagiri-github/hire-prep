@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { Building2, ChevronRight, Trophy } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import Pagination from '@/components/Pagination';
 
 interface Company {
   name: string;
@@ -11,6 +13,8 @@ interface Company {
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -23,6 +27,9 @@ export default function CompaniesPage() {
     };
     fetchCompanies();
   }, []);
+
+  const totalPages = Math.max(1, Math.ceil(companies.length / itemsPerPage));
+  const paged = companies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="p-6 pt-24 max-w-7xl mx-auto min-h-screen">
@@ -39,14 +46,14 @@ export default function CompaniesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {companies.map((company, index) => (
+        {paged.map((company, index) => (
           <Link
             href={`/companies/${company.name}`}
             key={company.name}
-            className="block group animate-fade-in"
+            className="block group animate-fade-in cursor-hand"
             style={{ animationDelay: `${index * 50}ms` }}
           >
-            <div className="glass-panel p-6 rounded-xl relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] group-hover:border-blue-500/30">
+            <div className="glass-panel p-6 rounded-xl relative overflow-hidden transition-all duration-300 card-hover group-hover:border-blue-500/30">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-blue-500/10"></div>
 
               <div className="flex items-center justify-between mb-6 relative z-10">
@@ -75,6 +82,12 @@ export default function CompaniesPage() {
           </Link>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-8">
+          <Pagination page={currentPage} totalPages={totalPages} onPage={p => setCurrentPage(p)} />
+        </div>
+      )}
     </div>
   );
 }
