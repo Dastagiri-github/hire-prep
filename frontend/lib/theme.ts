@@ -1,9 +1,18 @@
-export type Theme = "light" | "dark";
+export type Theme = "bright" | "dark";
 
 export function applyTheme(next: Theme) {
   if (typeof document === "undefined") return;
-  document.documentElement.classList.remove("light", "dark");
-  document.documentElement.classList.add(next);
+  // remove any theme classes we may have used historically
+  document.documentElement.classList.remove("bright", "dark", "light");
+
+  // For compatibility, treat `bright` as equivalent to `light` (some CSS uses .light)
+  if (next === "bright") {
+    document.documentElement.classList.add("bright");
+    document.documentElement.classList.add("light");
+  } else {
+    document.documentElement.classList.add("dark");
+  }
+
   try {
     localStorage.setItem("theme", next);
   } catch (e) {}
@@ -14,8 +23,10 @@ export function applyTheme(next: Theme) {
 
 export function toggleTheme() {
   if (typeof document === "undefined") return;
-  const current = document.documentElement.classList.contains("light") ? "light" : "dark";
-  const next: Theme = current === "dark" ? "light" : "dark";
+  // consider either 'bright' or legacy 'light' as the bright state
+  const isBright = document.documentElement.classList.contains("bright") || document.documentElement.classList.contains("light");
+  const current = isBright ? "bright" : "dark";
+  const next: Theme = current === "dark" ? "bright" : "dark";
   applyTheme(next);
   return next;
 }

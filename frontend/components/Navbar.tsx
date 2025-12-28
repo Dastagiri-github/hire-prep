@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Code2, LayoutDashboard, UserPlus, Trophy, LogOut, Database } from 'lucide-react';
+import { Code2, LayoutDashboard, UserPlus, Trophy, LogOut, Database, Menu, X } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
@@ -10,6 +10,7 @@ const Navbar = () => {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isHomePage = pathname === '/';
 
@@ -53,7 +54,10 @@ const Navbar = () => {
   const glassClass = (isHomePage && scrolled) || !isHomePage ? 'glass' : 'bg-transparent';
   
   return (
-    <nav className={`${positionClass} top-0 left-0 right-0 z-50 transition-all duration-300 ${glassClass} `} style={{ height: 'var(--navbar-height)' }}>
+    <nav
+      className={`${positionClass} top-0 left-0 right-0 z-50 transition-all duration-300 ${glassClass} `}
+      style={{ height: 'var(--navbar-height)', marginTop: '1px' }}
+    >
         <div className="max-w-7xl mx-auto px-8 sm:px-6 lg:px-8 flex justify-between items-center h-full gap-4">
         <Link href="/" className="group flex items-center gap-3 cursor-pointer">
           <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-500/20 dark:to-purple-500/20 bright:from-blue-100 bright:to-purple-100 border border-blue-500/20 dark:border-blue-500/20 bright:border-blue-200 group-hover:border-blue-500/50 dark:group-hover:border-blue-500/50 bright:group-hover:border-blue-300 group-hover:scale-105 transition-all duration-300 shadow-sm">
@@ -90,6 +94,16 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setMobileOpen(open => !open)}
+              aria-label="Open menu"
+              className="p-2 rounded-lg hover:bg-white/5 transition-colors text-gray-400"
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
           {!isLoggedIn ? (
             <>
               <Link
@@ -119,6 +133,34 @@ const Navbar = () => {
             <ThemeToggle />
           </div>
         </div>
+        {/* Mobile dropdown/menu */}
+        {mobileOpen && (
+          <div className="md:hidden absolute top-full right-4 mt-2 w-64 bg-white/5 bright:bg-white rounded-xl border border-white/5 dark:border-white/5 bright:border-bright-border p-3 shadow-lg z-50">
+            <div className="flex flex-col gap-2">
+              <Link href="/dashboard" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isActive('/dashboard')}`}>
+                <LayoutDashboard className="w-4 h-4" /> Dashboard
+              </Link>
+              <Link href="/companies" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isActive('/companies')}`}>
+                <Trophy className="w-4 h-4" /> Battleground
+              </Link>
+              <Link href="/sql" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isActive('/sql')}`}>
+                <Database className="w-4 h-4" /> SQL
+              </Link>
+              <div className="border-t border-white/5 mt-2 pt-2" />
+              {!isLoggedIn ? (
+                <>
+                  <Link href="/login" onClick={() => setMobileOpen(false)} className="px-3 py-2 rounded-lg text-sm text-gray-300 hover:text-white">Login</Link>
+                  <Link href="/register" onClick={() => setMobileOpen(false)} className="px-3 py-2 rounded-lg text-sm bg-blue-600 text-white font-semibold">Register</Link>
+                </>
+              ) : (
+                <button onClick={() => { setMobileOpen(false); handleLogout(); }} className="px-3 py-2 rounded-lg text-sm text-red-400">Logout</button>
+              )}
+              <div className="pt-2">
+                <ThemeToggle />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   );

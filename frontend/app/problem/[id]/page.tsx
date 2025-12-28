@@ -2,7 +2,9 @@
 import { useEffect, useState, use } from 'react';
 import api from '@/lib/api';
 import Editor from '@monaco-editor/react';
-import { Play, RotateCcw, CheckCircle2, AlertCircle, Terminal, ChevronDown, ChevronUp, Code2, Cpu, Timer } from 'lucide-react';
+import { Play, RotateCcw, CheckCircle2, AlertCircle, Terminal, ChevronDown, ChevronUp, Code2, Cpu, Timer, ChevronLeft, ChevronRight } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
+import { useRouter } from 'next/navigation';
 
 interface Problem {
     id: number;
@@ -23,6 +25,9 @@ export default function ProblemPage({ params }: { params: Promise<{ id: string }
     const [error, setError] = useState('');
     const [availableLanguages, setAvailableLanguages] = useState<string[]>(['python', 'javascript']);
     const [isOutputOpen, setIsOutputOpen] = useState(true);
+    const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
+    const [editorTheme, setEditorTheme] = useState('vs-dark');
+    const router = useRouter();
 
     const STARTER_CODE: Record<string, string> = {
         python: `def solution():
@@ -71,6 +76,16 @@ int main() {
     };
 
     useEffect(() => {
+        const applyEditorThemeFromDoc = () => {
+            if (typeof document === 'undefined') return;
+            const isLight = document.documentElement.classList.contains('light');
+            setEditorTheme(isLight ? 'vs' : 'vs-dark');
+        };
+        applyEditorThemeFromDoc();
+        const handler = (e: any) => {
+            setEditorTheme(e?.detail === 'light' ? 'vs' : 'vs-dark');
+        };
+        window.addEventListener('themechange', handler);
         const checkHealth = async () => {
             try {
                 const res = await api.get('/health');
@@ -97,6 +112,7 @@ int main() {
             }
         };
         fetchProblem();
+        return () => window.removeEventListener('themechange', handler);
     }, [resolvedParams.id]);
 
     const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -162,14 +178,14 @@ int main() {
     );
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen pt-20 pb-4 px-4 gap-4 max-w-[1920px] mx-auto overflow-hidden">
+        <div className="flex flex-col lg:flex-row h-screen pt-5 pb-4 px-4 gap-4 max-w-[1920px] mx-auto overflow-hidden">
             {/* Left Panel: Problem Description */}
-            <div className="w-full lg:w-[35%] flex flex-col h-full animate-fade-in">
+            <div className="w-full lg:w-[35%] flex flex-col h-full animate-fade-in lg:mr-6">
                 <div className="glass-panel p-0 rounded-2xl flex-1 flex flex-col overflow-hidden border border-white/10 shadow-2xl">
                     <div className="p-6 border-b border-white/5 bg-white/5 backdrop-blur-md">
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-gray-400 bg-clip-text text-transparent mb-3 leading-tight">
+                                <h1 className="question-title text-2xl font-bold mb-3 leading-tight text-black dark:text-white">
                                     {problem.title}
                                 </h1>
                                 <div className="flex flex-wrap gap-2">
@@ -185,6 +201,22 @@ int main() {
                                         </span>
                                     ))}
                                 </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => router.back()}
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm font-medium transition-all duration-200 hover:scale-105"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                    Back
+                                </button>
+                                <button
+                                    onClick={() => setIsLeftCollapsed(v => !v)}
+                                    className="p-2 rounded-lg hover:bg-white/10 text-gray-400"
+                                    title="Toggle description"
+                                >
+                                    {isLeftCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -233,15 +265,15 @@ int main() {
             </div>
 
             {/* Right Panel: Code Editor */}
-            <div className="w-full lg:w-[65%] flex flex-col gap-4 h-full animate-fade-in" style={{ animationDelay: '100ms' }}>
+            <div className={`w-full ${isLeftCollapsed ? 'lg:w-full' : 'lg:w-[65%]'} flex flex-col gap-4 h-full animate-fade-in`} style={{ animationDelay: '100ms' }}>
                 <div className="glass-panel p-2 rounded-xl flex justify-between items-center border border-white/10">
                     <div className="flex items-center gap-4 px-2">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-black/20 rounded-lg border border-white/5">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-black/20 rounded-lg border border-white/5 select-white">
                             <Code2 className="w-4 h-4 text-blue-400" />
                             <select
                                 value={language}
                                 onChange={handleLanguageChange}
-                                className="bg-transparent border-none text-white text-sm focus:ring-0 cursor-pointer font-medium"
+                                className="bg-transparent border-none text-black dark:text-white text-sm focus:ring-0 cursor-pointer font-medium"
                             >
                                 {availableLanguages.map(lang => (
                                     <option key={lang} value={lang} className="bg-gray-900">
@@ -252,6 +284,9 @@ int main() {
                         </div>
                     </div>
                     <div className="flex gap-2">
+                        <div className="p-0 flex items-center">
+                            <ThemeToggle />
+                        </div>
                         <button
                             onClick={() => setCode(STARTER_CODE[language] || '')}
                             className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
@@ -275,14 +310,14 @@ int main() {
                 </div>
 
                 <div className="flex-grow glass-panel rounded-xl overflow-hidden border border-white/10 shadow-2xl relative group">
-                    <div className="absolute inset-0 bg-[#1e1e1e]">
+                        <div className="absolute inset-0 bg-[#1e1e1e]">
                         <Editor
                             height="100%"
                             defaultLanguage="python"
                             language={language}
                             value={code}
                             onChange={(value) => setCode(value || '')}
-                            theme="vs-dark"
+                               theme={editorTheme}
                             options={{
                                 minimap: { enabled: false },
                                 fontSize: 14,
@@ -315,7 +350,7 @@ int main() {
                         )}
                     </div>
                     {isOutputOpen && (
-                        <div className="p-0 font-mono text-sm overflow-y-auto custom-scrollbar flex-1 bg-[#0d1117]">
+                        <div className="p-0 font-mono text-sm overflow-y-auto custom-scrollbar flex-1 console-panel bg-[#0d1117]">
                             {output ? (
                                 <div className="p-4">
                                     <pre className={`whitespace-pre-wrap ${output.includes('Error') ? 'text-red-400' :

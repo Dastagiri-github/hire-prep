@@ -8,7 +8,8 @@ const ThemeToggle = () => {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const current = document.documentElement.classList.contains("light") ? "light" : "dark";
+    const isBright = document.documentElement.classList.contains("bright") || document.documentElement.classList.contains("light");
+    const current = isBright ? "bright" : "dark";
     setTheme(current as Theme);
   }, []);
 

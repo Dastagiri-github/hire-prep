@@ -5,6 +5,7 @@ import Editor from "@monaco-editor/react";
 import Link from 'next/link';
 import { Play, CheckCircle, XCircle, Database, Table as TableIcon, Menu, ChevronLeft, ChevronRight, Code2, Terminal } from 'lucide-react';
 import ResizableSplit from '@/components/ResizableSplit';
+import { useRouter } from 'next/navigation';
 import ThemeToggle from '@/components/ThemeToggle';
 
 interface SQLChapter {
@@ -39,6 +40,9 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
     const [code, setCode] = useState<string>("-- Write your SQL query here\nSELECT * FROM users;");
     const [result, setResult] = useState<ExecutionResult | null>(null);
     const [loading, setLoading] = useState(false);
+    const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
+    const [editorTheme, setEditorTheme] = useState('vs-dark');
+    const router = useRouter();
 
     const allProblems = chapters.flatMap(c => c.problems);
     const currentProblemIndex = allProblems.findIndex(p => p.id === problem?.id);
@@ -46,6 +50,16 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
     const nextProblem = currentProblemIndex < allProblems.length - 1 ? allProblems[currentProblemIndex + 1] : null;
 
     useEffect(() => {
+        const applyEditorThemeFromDoc = () => {
+            if (typeof document === 'undefined') return;
+            const isLight = document.documentElement.classList.contains('light');
+            setEditorTheme(isLight ? 'vs' : 'vs-dark');
+        };
+        applyEditorThemeFromDoc();
+        const handler = (e: any) => {
+            setEditorTheme(e?.detail === 'light' ? 'vs' : 'vs-dark');
+        };
+        window.addEventListener('themechange', handler);
         const fetchData = async () => {
             try {
                 const [probRes, chapRes] = await Promise.all([
@@ -59,6 +73,7 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
             }
         };
         fetchData();
+        return () => window.removeEventListener('themechange', handler);
     }, [resolvedParams.id]);
 
     const handleRun = async () => {
@@ -96,21 +111,94 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
 
     const tablesToDisplay = result?.tables || problem.tables;
 
+    const leftPanel = isLeftCollapsed ? (
+        <div className="flex items-center justify-center h-full">
+            <button
+                onClick={() => setIsLeftCollapsed(false)}
+                className="p-2 rounded-lg hover:bg-white/5 transition-colors text-gray-400"
+                title="Expand description"
+            >
+                <ChevronRight className="w-5 h-5" />
+            </button>
+        </div>
+    ) : (
+    <div className="h-full border-r border-white/5 dark:border-white/5 bright:border-bright-border bg-gray-900/20 dark:bg-gray-900/20 bright:bg-gray-50 flex flex-col min-w-[300px] backdrop-blur-sm ml-4 mb-6 mr-6">
+            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+                <div className="prose prose-invert max-w-none">
+                    <h2 className="text-xl font-bold text-white dark:text-white bright:text-bright-foreground mb-4 flex items-center gap-2">
+                        Problem Description
+                    </h2>
+                    <div className="text-gray-300 dark:text-gray-300 bright:text-gray-700 leading-relaxed bg-white/5 dark:bg-white/5 bright:bg-gray-50 p-4 rounded-xl border border-white/5 dark:border-white/5 bright:border-bright-border hover:border-white/10 dark:hover:border-white/10 bright:hover:border-bright-primary transition-colors">
+                        <p className="whitespace-pre-wrap">{problem.description}</p>
+                    </div>
+                </div>
+
+                <div className="mt-8">
+                    <h3 className="text-sm font-bold text-blue-400 dark:text-blue-400 bright:text-bright-primary mb-4 flex items-center gap-2 uppercase tracking-wider">
+                        <TableIcon className="w-4 h-4 text-blue-500 bright:text-blue-600" />
+                        Schema Information
+                    </h3>
+                    <div className="bg-gray-900/50 dark:bg-gray-900/50 bright:bg-white rounded-xl border border-white/10 dark:border-white/10 bright:border-bright-border overflow-hidden hover:border-white/20 dark:hover:border-white/20 bright:hover:border-bright-primary transition-colors bright-table">
+                        {tablesToDisplay ? (
+                            <div className="p-4 space-y-6">
+                                {Object.entries(tablesToDisplay).map(([tableName, rows]) => (
+                                    <div key={tableName}>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Database className="w-3 h-3 text-gray-500 bright:text-gray-700" />
+                                            <h4 className="text-xs font-bold text-gray-300 font-mono">{tableName}</h4>
+                                        </div>
+                                        <div className="overflow-x-auto rounded-lg border border-white/5 bg-black/20 bright:bg-white bright:border-gray-200 bright-table">
+                                            <table className="w-full text-left border-collapse text-xs">
+                                                <thead>
+                                                    <tr>
+                                                        {rows.length > 0 && Object.keys(rows[0]).map((col) => (
+                                                            <th key={col} className="p-3 border-b border-white/10 font-bold text-gray-400 bg-white/5 bright:bg-white bright:text-black whitespace-nowrap">
+                                                                {col}
+                                                            </th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {rows.map((row, i) => (
+                                                        <tr key={i} className="hover:bg-white/5 transition-colors cursor-pointer bright:hover:bg-gray-50">
+                                                            {Object.values(row).map((val: any, j) => (
+                                                                <td key={j} className="p-3 border-b border-white/5 text-gray-300 font-mono whitespace-nowrap bright:text-black">
+                                                                    {String(val)}
+                                                                </td>
+                                                            ))}
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-8 text-center">
+                                <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                                <p className="text-xs text-gray-400">Loading schema...</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    );
+
     return (
-        <div className="flex flex-col h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0f1e] to-black">
+        <div className="flex flex-col h-screen overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0f1e] to-black bright:bg-bright-background">
             {/* Header */}
-            <div className="h-16 border-b border-white/5 bg-gray-900/50 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-40">
-                <div className="flex items-center gap-4">
+            <div className="sql-header h-16 border-b border-white/5 dark:border-white/5 bright:border-bright-border bg-gray-900/50 dark:bg-gray-900/50 bright:bg-white bright:text-black bright:backdrop-blur-none flex items-center justify-between px-6 sticky top-2 z-40">
+                    <div className="flex items-center gap-4">
                     <Link
                         href="/sql"
-                        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-sm font-medium transition-all duration-200 hover:scale-105 cursor-pointer"
+                        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white bright:text-black text-sm font-medium transition-all duration-200 hover:scale-105 cursor-pointer"
                     >
                         <ChevronLeft className="w-4 h-4" />
                         Back
                     </Link>
-                    <div className="bg-white/5 border border-white/10 rounded-lg">
-                        <ThemeToggle />
-                    </div>
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                         className="p-2 hover:bg-white/5 rounded-lg transition-all duration-200 text-gray-400 hover:text-white cursor-pointer hover:scale-105"
@@ -119,29 +207,30 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
                         <Menu className="w-5 h-5" />
                     </button>
 
-                    <div className="flex items-center gap-2 mr-2 border-r border-white/10 pr-6">
-                        <Link
-                            href={prevProblem ? `/sql/${prevProblem.id}` : '#'}
-                            className={`p-2 rounded-lg transition-all duration-200 ${prevProblem ? 'hover:bg-white/10 text-gray-400 hover:text-white cursor-pointer hover:scale-105' : 'text-gray-800 cursor-not-allowed pointer-events-none'}`}
-                            title={prevProblem ? `Previous: ${prevProblem.title}` : 'No previous problem'}
-                        >
-                            <ChevronLeft className="w-5 h-5" />
-                        </Link>
-                        <Link
-                            href={nextProblem ? `/sql/${nextProblem.id}` : '#'}
-                            className={`p-2 rounded-lg transition-all duration-200 ${nextProblem ? 'hover:bg-white/10 text-gray-400 hover:text-white cursor-pointer hover:scale-105' : 'text-gray-800 cursor-not-allowed pointer-events-none'}`}
-                            title={nextProblem ? `Next: ${nextProblem.title}` : 'No next problem'}
-                        >
-                            <ChevronRight className="w-5 h-5" />
-                        </Link>
-                    </div>
+                                <div className="flex items-center gap-2 mr-2 border-r border-white/10 pr-6">
+                                    
+                                    <Link
+                                        href={prevProblem ? `/sql/${prevProblem.id}` : '#'}
+                                        className={`p-2 rounded-lg transition-all duration-200 ${prevProblem ? 'hover:bg-white/10 text-gray-400 hover:text-white cursor-pointer hover:scale-105' : 'text-gray-800 cursor-not-allowed pointer-events-none'}`}
+                                        title={prevProblem ? `Previous: ${prevProblem.title}` : 'No previous problem'}
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </Link>
+                                    <Link
+                                        href={nextProblem ? `/sql/${nextProblem.id}` : '#'}
+                                        className={`p-2 rounded-lg transition-all duration-200 ${nextProblem ? 'hover:bg-white/10 text-gray-400 hover:text-white cursor-pointer hover:scale-105' : 'text-gray-800 cursor-not-allowed pointer-events-none'}`}
+                                        title={nextProblem ? `Next: ${nextProblem.title}` : 'No next problem'}
+                                    >
+                                        <ChevronRight className="w-5 h-5" />
+                                    </Link>
+                                </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                            <Database className="w-5 h-5 text-blue-400" />
+                        <div className="flex items-center gap-2">
+                        <div className="p-2 rounded-lg bg-blue-500/10 bright:bg-blue-50 border border-blue-500/20">
+                            <Database className="w-5 h-5 text-blue-400 bright:text-blue-600" />
                         </div>
                         <div>
-                            <h1 className="font-bold text-white text-lg leading-tight">{problem.title}</h1>
+                            <h1 className="question-title font-bold text-white text-lg leading-tight">{problem.title}</h1>
                             <div className="flex items-center gap-2 mt-1">
                                 <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border transition-all duration-200 hover:scale-105 cursor-default ${getDifficultyColor(problem.difficulty)}`}>
                                     {problem.difficulty}
@@ -149,20 +238,25 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
                             </div>
                         </div>
                     </div>
+                     <div className="absolute right-6 top-2 z-40 flex items-center">
+                                <div className="mr-3 p-1 rounded-lg bg-white/5 border border-white/10 hidden md:block">
+                                    <ThemeToggle />
+                                </div>
+                                <button
+                                    onClick={handleRun}
+                                    disabled={loading}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-600 dark:to-emerald-600 bright:from-[#22c55e] bright:to-[#16a34a] hover:from-green-500 hover:to-emerald-500 dark:hover:from-green-500 dark:hover:to-emerald-500 bright:hover:from-[#22c55e] bright:hover:to-[#15803d] !text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-md shadow-green-500/20 dark:shadow-green-500/20 bright:shadow-green-500/10 hover:shadow-green-500/30 dark:hover:shadow-green-500/30 bright:hover:shadow-green-500/20 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    <Play className="w-3.5 h-3.5 fill-current" />
+                                    {loading ? 'Running...' : 'Run Query'}
+                                </button>
+                            </div>
                 </div>
-                <button
-                    onClick={handleRun}
-                    disabled={loading}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-lg font-semibold text-sm transition-all duration-200 shadow-md shadow-green-500/20 hover:shadow-green-500/30 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                    <Play className="w-3.5 h-3.5 fill-current" />
-                    {loading ? 'Running...' : 'Run Query'}
-                </button>
             </div>
 
-            <div className="flex-1 flex overflow-hidden relative">
+            <div className="flex-1 flex overflow-hidden relative h-full pt-4">
                 {/* Sidebar */}
-                <div className={`border-r border-white/5 bg-gray-900/30 flex flex-col overflow-y-auto shrink-0 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-72 opacity-100' : 'w-0 opacity-0 overflow-hidden pointer-events-none'}`}>
+                    <div className={`border-r border-white/5 dark:border-white/5 bright:border-bright-border bg-gray-900/30 dark:bg-gray-900/30 bright:bg-white flex flex-col overflow-y-auto shrink-0 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-72 opacity-100' : 'w-0 opacity-0 overflow-hidden pointer-events-none'}`}>
                     <div className="p-6">
                         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-6 flex items-center gap-2">
                             <Code2 className="w-4 h-4" />
@@ -190,54 +284,102 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
                             ))}
                         </div>
                     </div>
+                    <div className="ml-4">
+                        <button
+                            onClick={() => setIsLeftCollapsed(v => !v)}
+                            className="p-2 rounded-lg hover:bg-white/5 transition-colors text-gray-400"
+                            title="Toggle description panel"
+                        >
+                            {isLeftCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Resizable Layout: Question Panel | Editor & Results */}
                 <ResizableSplit
-                    initialLeft={30}
-                    left={
-                        <div className="h-full border-r border-white/5 bg-gray-900/20 flex flex-col min-w-[300px] backdrop-blur-sm">
-                            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
-                                <div className="prose prose-invert max-w-none">
-                                    <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                                        Problem Description
-                                    </h2>
-                                    <div className="text-gray-300 leading-relaxed bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                                        <p className="whitespace-pre-wrap">{problem.description}</p>
-                                    </div>
-                                </div>
+                    initialLeft={isLeftCollapsed ? 6 : 35}
+                    left={leftPanel}
+                    right={
+                        <div className="flex-1 flex flex-col min-w-0 h-full gap-3 relative">
+                            {/* Run Query Button (top-right) */}
+                           
 
-                                <div className="mt-8">
-                                    <h3 className="text-sm font-bold text-blue-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
-                                        <TableIcon className="w-4 h-4" />
-                                        Schema Information
-                                    </h3>
-                                    <div className="bg-gray-900/50 rounded-xl border border-white/10 overflow-hidden hover:border-white/20 transition-colors">
-                                        {tablesToDisplay ? (
-                                            <div className="p-4 space-y-6">
-                                                {Object.entries(tablesToDisplay).map(([tableName, rows]) => (
-                                                    <div key={tableName}>
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <Database className="w-3 h-3 text-gray-500" />
-                                                            <h4 className="text-xs font-bold text-gray-300 font-mono">{tableName}</h4>
+                            {/* Code Editor */}
+                            <div className="flex-1 relative glass-panel rounded-xl overflow-hidden border border-white/10 dark:border-white/10 bright:border-bright-border shadow-2xl dark:shadow-2xl bright:shadow-surface-shadow min-h-0 mr-4">
+                                <div className="absolute inset-0 bg-[#1e1e1e] dark:bg-[#1e1e1e] bright:bg-white">
+                                    <Editor
+                                        height="100%"
+                                        defaultLanguage="sql"
+                                        theme={editorTheme}
+                                        value={code}
+                                        onChange={(value) => setCode(value || "")}
+                                        options={{
+                                            minimap: { enabled: false },
+                                            fontSize: 14,
+                                            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                            padding: { top: 24, bottom: 24 },
+                                            scrollBeyondLastLine: false,
+                                            lineNumbers: "on",
+                                            renderLineHighlight: "all",
+                                            smoothScrolling: true,
+                                            cursorBlinking: "smooth",
+                                            cursorSmoothCaretAnimation: "on",
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            
+                            
+                            
+                            {/* Results Panel */}
+                            <div className="flex-1 min-h-0 bg-gray-900 dark:bg-gray-900 bright:bg-bright-background-subtle flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.3)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.3)] bright:shadow-none rounded-xl border border-white/10 dark:border-white/10 bright:border-bright-border overflow-hidden mr-4 mb-4 console-panel">
+                                <div className="h-12 border-b border-white/10 dark:border-white/10 bright:border-bright-border flex items-center px-6 bg-gray-800/50 dark:bg-gray-800/50 bright:bg-bright-background-subtle backdrop-blur-sm justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Terminal className="w-4 h-4 text-gray-400 dark:text-gray-400 bright:text-bright-foreground-secondary" />
+                                        <span className="text-sm font-semibold text-gray-300 dark:text-gray-300 bright:text-bright-foreground">Query Results</span>
+                                    </div>
+                                    {result && (
+                                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border ${result.success
+                                            ? 'bg-green-500/10 dark:bg-green-500/10 bright:bg-green-100 text-green-400 dark:text-green-400 bright:text-bright-success border-green-500/20 dark:border-green-500/20 bright:border-green-200'
+                                            : 'bg-red-500/10 dark:bg-red-500/10 bright:bg-red-100 text-red-400 dark:text-red-400 bright:text-red-600 border-red-500/20 dark:border-red-500/20 bright:border-red-200'}`}>
+                                            {result.success ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                                            {result.success ? 'Success' : 'Error'}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1 overflow-auto p-0 bg-[#0d1117] dark:bg-[#0d1117] bright:bg-white mb-4 bright-table">
+                                    {result ? (
+                                        <div className="min-h-full">
+                                            {result.error ? (
+                                                <div className="p-6">
+                                                    <div className="p-4 rounded-xl bg-red-500/10 dark:bg-red-500/10 bright:bg-red-100 border border-red-500/20 dark:border-red-500/20 bright:border-red-200 text-red-400 dark:text-red-400 bright:text-red-600 font-mono text-sm flex items-start gap-3">
+                                                        <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                                                        <div>
+                                                            <div className="font-bold mb-1">Execution Error</div>
+                                                            {result.error}
                                                         </div>
-                                                        <div className="overflow-x-auto rounded-lg border border-white/5 bg-black/20">
-                                                            <table className="w-full text-left border-collapse text-xs">
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {result.user_result.length > 0 ? (
+                                                        <div className="overflow-x-auto">
+                                                            <table className="w-full text-left border-collapse">
                                                                 <thead>
                                                                     <tr>
-                                                                        {rows.length > 0 && Object.keys(rows[0]).map((col) => (
-                                                                            <th key={col} className="p-3 border-b border-white/10 font-bold text-gray-400 bg-white/5 whitespace-nowrap">
+                                                                        {result.columns.map((col) => (
+                                                                            <th key={col} className="p-3 border-b border-white/10 dark:border-white/10 bright:border-bright-border text-xs font-bold text-gray-400 dark:text-gray-400 bright:text-black uppercase bg-white/5 dark:bg-white/5 bright:bg-white whitespace-nowrap sticky top-0 backdrop-blur-sm">
                                                                                 {col}
                                                                             </th>
                                                                         ))}
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
-                                                                    {rows.map((row, i) => (
-                                                                        <tr key={i} className="hover:bg-white/5 transition-colors cursor-pointer">
-                                                                            {Object.values(row).map((val: any, j) => (
-                                                                                <td key={j} className="p-3 border-b border-white/5 text-gray-300 font-mono whitespace-nowrap">
-                                                                                    {String(val)}
+                                                                    {result.user_result.map((row, i) => (
+                                                                        <tr key={i} className="hover:bg-white/5 dark:hover:bg-white/5 bright:hover:bg-bright-hover transition-colors group">
+                                                                            {result.columns.map((col) => (
+                                                                                <td key={col} className="p-3 border-b border-white/5 dark:border-white/5 bright:border-bright-border text-sm text-gray-300 dark:text-gray-300 bright:text-black font-mono whitespace-nowrap group-hover:text-white dark:group-hover:text-white bright:group-hover:text-bright-foreground">
+                                                                                    {row[col]}
                                                                                 </td>
                                                                             ))}
                                                                         </tr>
@@ -245,127 +387,25 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
                                                                 </tbody>
                                                             </table>
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="p-8 text-center">
-                                                <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-                                                <p className="text-xs text-gray-400">Loading schema...</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    right={
-                        <div className="flex-1 flex flex-col min-w-0 bg-[#1e1e1e]">
-                            {/* Resizable: Editor | Results */}
-                            <ResizableSplit
-                                initialLeft={55}
-                                left={
-                                    <div className="flex-1 relative">
-                                        <div className="absolute inset-0">
-                                            <Editor
-                                                height="100%"
-                                                defaultLanguage="sql"
-                                                theme="vs-dark"
-                                                value={code}
-                                                onChange={(value) => setCode(value || "")}
-                                                options={{
-                                                    minimap: { enabled: false },
-                                                    fontSize: 14,
-                                                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                                                    padding: { top: 24, bottom: 24 },
-                                                    scrollBeyondLastLine: false,
-                                                    lineNumbers: "on",
-                                                    renderLineHighlight: "all",
-                                                    smoothScrolling: true,
-                                                    cursorBlinking: "smooth",
-                                                    cursorSmoothCaretAnimation: "on",
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                }
-                                right={
-                                    <div className="bg-gray-900 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.3)] z-10 min-w-[250px]">
-                        <div className="h-12 border-b border-white/10 flex items-center px-6 bg-gray-800/50 backdrop-blur-sm justify-between">
-                            <div className="flex items-center gap-2">
-                                <Terminal className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm font-semibold text-gray-300">Query Results</span>
-                            </div>
-                            {result && (
-                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border ${result.success
-                                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                    : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                                    {result.success ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                                    {result.success ? 'Success' : 'Error'}
-                                </div>
-                            )}
-                        </div>
-                        <div className="flex-1 overflow-auto p-0 bg-[#0d1117]">
-                            {result ? (
-                                <div className="min-h-full">
-                                    {result.error ? (
-                                        <div className="p-6">
-                                            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-mono text-sm flex items-start gap-3">
-                                                <XCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                                                <div>
-                                                    <div className="font-bold mb-1">Execution Error</div>
-                                                    {result.error}
-                                                </div>
-                                            </div>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-500 bright:text-bright-text-muted p-8">
+                                                            <Database className="w-12 h-12 mb-4 opacity-20" />
+                                                            <p className="text-sm">Query executed successfully but returned no rows.</p>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
                                         </div>
                                     ) : (
-                                        <>
-                                            {result.user_result.length > 0 ? (
-                                                <div className="overflow-x-auto">
-                                                    <table className="w-full text-left border-collapse">
-                                                        <thead>
-                                                            <tr>
-                                                                {result.columns.map((col) => (
-                                                                    <th key={col} className="p-3 border-b border-white/10 text-xs font-bold text-gray-400 uppercase bg-white/5 whitespace-nowrap sticky top-0 backdrop-blur-sm">
-                                                                        {col}
-                                                                    </th>
-                                                                ))}
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {result.user_result.map((row, i) => (
-                                                                <tr key={i} className="hover:bg-white/5 transition-colors group">
-                                                                    {result.columns.map((col) => (
-                                                                        <td key={col} className="p-3 border-b border-white/5 text-sm text-gray-300 font-mono whitespace-nowrap group-hover:text-white">
-                                                                            {row[col]}
-                                                                        </td>
-                                                                    ))}
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            ) : (
-                                                <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-                                                    <Database className="w-12 h-12 mb-4 opacity-20" />
-                                                    <p className="text-sm">Query executed successfully but returned no rows.</p>
-                                                </div>
-                                            )}
-                                        </>
+                                        <div className="flex flex-col items-center justify-center h-full text-gray-600 dark:text-gray-600 bright:text-bright-text-muted">
+                                            <div className="w-16 h-16 rounded-2xl bg-white/5 dark:bg-white/5 bright:bg-bright-background-subtle flex items-center justify-center mb-4 border border-white/5 dark:border-white/5 bright:border-bright-border">
+                                                <Play className="w-8 h-8 opacity-20 ml-1" />
+                                            </div>
+                                            <p className="text-sm font-medium text-gray-500 dark:text-gray-500 bright:text-bright-text-muted">Run your query to see results</p>
+                                        </div>
                                     )}
                                 </div>
-                            ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-gray-600">
-                                    <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4 border border-white/5">
-                                        <Play className="w-8 h-8 opacity-20 ml-1" />
-                                    </div>
-                                    <p className="text-sm font-medium text-gray-500">Run your query to see results</p>
-                                </div>
-                            )}
-                                        </div>
-                                    </div>
-                                }
-                            />
+                            </div>
                         </div>
                     }
                 />

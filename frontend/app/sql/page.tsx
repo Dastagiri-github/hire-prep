@@ -25,6 +25,8 @@ export default function SQLDashboard() {
   const [chapters, setChapters] = useState<SQLChapter[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 1;
+  const problemsPerPage = 6;
+  const [problemPageByChapter, setProblemPageByChapter] = useState<Record<number, number>>({});
 
   useEffect(() => {
     const fetchChapters = async () => {
@@ -56,7 +58,7 @@ export default function SQLDashboard() {
   return (
     <div className="container mx-auto px-6 py-8 max-w-7xl">
       <div className="mb-8 border-b border-white/10 pb-4">
-        <h1 className="text-3xl font-bold text-white">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
           SQL Mastery
         </h1>
       </div>
@@ -91,7 +93,14 @@ export default function SQLDashboard() {
                     </div>
                     
                     <div className="grid gap-3">
-                        {chapter.problems.map(problem => (
+                                {(() => {
+                                  const page = problemPageByChapter[chapter.id] || 1;
+                                  const totalProblemPages = Math.max(1, Math.ceil(chapter.problems.length / problemsPerPage));
+                                  const visibleProblems = chapter.problems.slice((page - 1) * problemsPerPage, page * problemsPerPage);
+
+                                  return (
+                                    <>
+                                      {visibleProblems.map(problem => (
                             <Link 
                                 key={problem.id} 
                                 href={`/sql/${problem.id}`}
@@ -108,7 +117,20 @@ export default function SQLDashboard() {
                                     <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-blue-400 transition-colors" />
                                 </div>
                             </Link>
-                        ))}
+                                      ))}
+
+                                      {chapter.problems.length > problemsPerPage && (
+                                        <div className="flex justify-center mt-4">
+                                          <Pagination
+                                            page={page}
+                                            totalPages={totalProblemPages}
+                                            onPage={(p) => setProblemPageByChapter(prev => ({ ...prev, [chapter.id]: p }))}
+                                          />
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                     </div>
                 </div>
                 ))}
@@ -119,12 +141,7 @@ export default function SQLDashboard() {
                     </div>
                 )}
 
-                {/* Pagination Controls */}
-                {chapters.length > 0 && (
-                <div className="flex justify-center items-center mt-8 pt-8">
-                  <Pagination page={currentPage} totalPages={totalPages} onPage={p => setCurrentPage(p)} />
-                </div>
-                )}
+                {/* Note: chapter-level pagination removed to avoid duplicate controls when per-chapter pagination is shown */}
             </div>
         </div>
       </div>

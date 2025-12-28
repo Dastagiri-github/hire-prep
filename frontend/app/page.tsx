@@ -11,7 +11,7 @@ export default function Home() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] bg-blue-500/20 rounded-full blur-[100px] -z-10" />
 
         {/* Announcement Badge */}
-        <div className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 mb-6 animate-fade-in">
+        <div className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 mt-6 mb-8 animate-fade-in">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500" />
@@ -21,8 +21,8 @@ export default function Home() {
 
         {/* Heading */}
         <h1 className="text-5xl md:text-7xl font-bold mb-5 tracking-tight">
-          <span className="text-gray-900 dark:!text-white">Master Your</span> <br />
-          <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <span className="text-white">Master Your</span> <br />
+          <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             Dream Placement
           </span>
         </h1>
@@ -106,7 +106,7 @@ function FeatureCard({
       <div className="mb-4 p-3 bg-gray-100 dark:bg-white/5 rounded-lg w-fit">
         {icon}
       </div>
-      <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-purple-500 via-pink-500 to-pink-400 bg-clip-text text-transparent">{title}</h3>
+      <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{title}</h3>
       <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{description}</p>
     </div>
   );

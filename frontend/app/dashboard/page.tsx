@@ -81,7 +81,7 @@ export default function Dashboard() {
         <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all duration-500 group-hover:bg-blue-500/20"></div>
 
-          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 relative z-10">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 relative z-10 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             <span className="w-1 h-6 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
             Your Progress
           </h2>

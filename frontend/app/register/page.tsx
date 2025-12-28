@@ -28,7 +28,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 pt-24 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0f1e] to-black">
+    <div className="min-h-screen flex items-center justify-center p-4 pt-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0f1e] to-black">
       <div className="glass-panel w-full max-w-sm p-6 rounded-2xl shadow-xl border border-white/10 relative overflow-hidden animate-fade-in">
 
         {/* Top accent */}
@@ -40,7 +40,7 @@ export default function Register() {
             <UserPlus className="w-5 h-5 text-purple-400" />
           </div>
 
-          <h1 className="text-xl font-semibold bg-gradient-to-r from-white via-purple-100 to-gray-400 bg-clip-text text-transparent">
+          <h1 className="text-xl font-semibold bg-gradient-to-r from-purple-500 via-purple-400 to-indigo-500 bg-clip-text text-transparent">
             Create Account
           </h1>
           <p className="text-xs text-gray-400">

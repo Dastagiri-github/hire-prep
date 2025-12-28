@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { Building2, ChevronRight, Trophy } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import Pagination from '@/components/Pagination';
 
 interface Company {
@@ -32,13 +31,13 @@ export default function CompaniesPage() {
   const paged = companies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className="p-6 pt-24 max-w-7xl mx-auto min-h-screen">
+    <div className="p-4 pt-4 max-w-7xl mx-auto min-h-screen">
       <div className="flex items-center gap-4 mb-12">
         <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
           <Trophy className="w-8 h-8 text-blue-400" />
         </div>
         <div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-gray-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             Company Battleground
           </h1>
           <p className="text-gray-400 mt-1">Master the most asked questions from top tech companies</p>
