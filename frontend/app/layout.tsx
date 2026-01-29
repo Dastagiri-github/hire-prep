@@ -24,9 +24,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="bright light">
       <head>
         <meta name="theme-color" content="#020617" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='bright'){document.documentElement.classList.add('bright','light');}else if(t==='dark'){document.documentElement.classList.add('dark');}else{var mq=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches; if(mq) document.documentElement.classList.add('dark'); else document.documentElement.classList.add('bright','light');}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}

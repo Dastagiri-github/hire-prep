@@ -32,7 +32,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 pt-24 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0f1e] to-black">
+    <div className="min-h-screen flex items-center justify-center p-4 pt-1 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0f1e] to-black">
       <div className="glass-panel w-full max-w-sm p-6 rounded-2xl shadow-xl border border-white/10 relative overflow-hidden animate-fade-in">
         
         {/* Top accent */}
@@ -44,7 +44,7 @@ export default function Login() {
             <LogIn className="w-6 h-6 text-blue-400" />
           </div>
 
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-blue-100 to-gray-400 bg-clip-text text-transparent mb-1">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-500 via-purple-400 to-indigo-500 bg-clip-text text-transparent mb-1">
             Welcome Back
           </h1>
           <p className="text-xs text-gray-400">

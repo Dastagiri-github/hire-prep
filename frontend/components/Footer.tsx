@@ -1,72 +1,27 @@
-import Link from "next/link";
-import { GraduationCap, Github, Twitter, Linkedin } from "lucide-react";
+"use client";
+import Link from 'next/link';
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
-
   return (
-    <footer className="border-t border-white/10 bg-white/5 mt-20">
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          
-          {/* Brand */}
-          <div className="flex flex-col items-center md:items-start gap-2">
-            <Link href="/" className="flex items-center gap-2 font-semibold footer-logo">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-500">
-                <GraduationCap className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-base">HirePrep</span>
-            </Link>
-            <p className="text-xs text-gray-400 text-center md:text-left max-w-xs">
-              Adaptive placement preparation for your dream career.
-            </p>
+    <footer className="w-full border-t border-white/5 dark:border-white/5 bright:border-gray-200 bg-transparent py-2 mt-2">
+      <div className="max-w-7xl mx-auto px-2 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-500/20 dark:to-purple-500/20 bright:from-blue-100 bright:to-purple-100 flex items-center justify-center glass hover-scale interactive">
+            <span className="text-sm font-bold text-blue-400 dark:text-blue-400 bright:text-[#2563eb]">HP</span>
+          <div>
+              <div className="text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">HirePrep</div>
+            <div className="text-xs bg-gradient-to-r from-purple-500 via-pink-500 to-pink-400 bg-clip-text text-transparent">Learning focused — built for interview success</div>
           </div>
-
-          {/* Links */}
-          <div className="flex items-center gap-6 text-xs text-gray-400">
-            <Link href="/about" className="hover:text-white transition-colors">
-              About
-            </Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">
-              Privacy
-            </Link>
-            <Link href="/terms" className="hover:text-white transition-colors">
-              Terms
-            </Link>
-          </div>
-
-          {/* Social */}
-          <div className="flex items-center gap-4">
-            <a
-              href="#"
-              aria-label="GitHub"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              <Github className="h-4 w-4" />
-            </a>
-            <a
-              href="#"
-              aria-label="Twitter"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              <Twitter className="h-4 w-4" />
-            </a>
-            <a
-              href="#"
-              aria-label="LinkedIn"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              <Linkedin className="h-4 w-4" />
-            </a>
           </div>
         </div>
 
-        {/* Copyright */}
-        <div className="mt-8 pt-4 border-t border-white/10 text-center">
-          <p className="text-xs text-gray-500">
-            © {currentYear} HirePrep. All rights reserved.
-          </p>
-        </div>
+        <nav className="flex gap-4 items-center">
+          <Link href="/about" className="text-sm text-gray-300 dark:text-gray-300 bright:text-gray-600 hover:text-blue-400 dark:hover:text-blue-400 bright:hover:text-[#2563eb] transition-colors interactive cursor-hand">About</Link>
+          <Link href="/privacy" className="text-sm text-gray-300 dark:text-gray-300 bright:text-gray-600 hover:text-blue-400 dark:hover:text-blue-400 bright:hover:text-[#2563eb] transition-colors interactive cursor-hand">Privacy</Link>
+          <Link href="/terms" className="text-sm text-gray-300 dark:text-gray-300 bright:text-gray-600 hover:text-blue-400 dark:hover:text-blue-400 bright:hover:text-[#2563eb] transition-colors interactive cursor-hand">Terms</Link>
+        </nav>
+
+        <div className="text-sm text-gray-400 dark:text-gray-400 bright:text-gray-500">© {new Date().getFullYear()} HirePrep — All rights reserved</div>
       </div>
     </footer>
   );

@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 :root {
+  /* Navbar sizing */
+  --navbar-height: 80px;
+
   /* Premium Dark Palette (default) */
   --background: #020617; /* Slate 950 */
   --foreground: #f8fafc; /* Slate 50 */
@@ -62,10 +65,23 @@
   color: var(--foreground) !important;
 }
 
-/* Make gradient masked text fallback to readable color in light mode */
-.light .bg-clip-text.text-transparent {
+/* Note: gradient masked text is allowed in light/bright mode for branded headings.
+   If you need a readable fallback for specific elements, add the
+   `force-fallback` class to the element and use the `.light/.bright .force-fallback` rule.
+*/
+.light .force-fallback,
+.bright .force-fallback {
   background-image: none !important;
   color: var(--foreground) !important;
+}
+
+/* Ensure gradient masked text is honored in both light/bright and dark themes */
+.bg-clip-text.text-transparent,
+.light .bg-clip-text.text-transparent,
+.bright .bg-clip-text.text-transparent {
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
 }
 
 /* Logo should use primary in light mode for a subtle brand accent */
@@ -253,4 +269,193 @@ body {
   animation: themeSwitch .45s ease;
 }
 
+/* Bright-mode / Light-mode fixes for specific components requested by user */
 
+/* Ensure bright mode preserves white text for blue CTAs */
+.bright .text-white {
+  color: white !important;
+}
+.light .bg-blue-600, .light .bg-blue-600 * , .bright .bg-blue-600, .bright .bg-blue-600 * {
+  color: white !important;
+}
+
+/* Make dark input panels readable in light/bright themes */
+.light .bg-black\/40 {
+  background-color: rgba(15,23,42,0.06) !important;
+  color: var(--foreground) !important;
+  border-color: var(--surface-border) !important;
+}
+.light .bg-black\/50 {
+  background-color: rgba(255,255,255,0.96) !important;
+  color: var(--foreground) !important;
+  border-color: var(--surface-border) !important;
+}
+.bright .bg-black\/40 {
+  background-color: rgba(255,255,255,0.96) !important;
+  color: var(--foreground) !important;
+  border-color: var(--surface-border) !important;
+}
+.bright .bg-black\/50 {
+  background-color: rgba(255,255,255,0.98) !important;
+  color: var(--foreground) !important;
+  border-color: var(--surface-border) !important;
+}
+
+/* Console/output panel: use white background and dark text in light/bright themes */
+.light .console-panel, .bright .console-panel {
+  background-color: #ffffff !important;
+  color: var(--foreground) !important;
+}
+
+/* Language select container: white bg and dark text in light/bright themes */
+.light .select-white, .bright .select-white {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: var(--surface-border) !important;
+}
+.light .select-white select, .bright .select-white select {
+  color: #0f172a !important;
+  background: transparent !important;
+}
+
+/* Ensure native select dropdown options are readable in light/bright themes */
+.light .select-white select option,
+.bright .select-white select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Dark mode select option readability */
+.dark .select-white select,
+.dark .select-white select option {
+  background-color: #0d1117 !important;
+  color: #ffffff !important;
+}
+
+/* Force question titles color per theme for editor pages */
+.question-title { color: inherit; }
+.dark .question-title { color: #ffffff !important; }
+.light .question-title, .bright .question-title { color: #0f172a !important; }
+
+/* SQL page bright-mode header and table overrides */
+.bright .sql-header {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+.bright .bright-table {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e6e6e6 !important;
+}
+.bright .bright-table th,
+.bright .bright-table td {
+  background-color: transparent !important;
+  color: #0f172a !important;
+}
+
+/* Make any element that uses `text-white` readable in bright mode */
+.bright .text-white {
+  color: var(--foreground) !important;
+}
+
+/* If a hover would set text to white, keep it readable in bright mode */
+.bright .hover\:text-white:hover {
+  color: var(--foreground) !important;
+}
+
+/* Ensure use of .text-white in complex selectors is also covered */
+.bright .group-hover\:text-white .group:hover &,
+.bright .group:hover .group-hover\:text-white {
+  color: var(--foreground) !important;
+}
+
+/* Roadmap page: ensure card surfaces and dividers are light in bright mode */
+.bright .companies-page .bg-gray-800 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e6e6e6 !important;
+}
+.bright .companies-page .border-gray-700 {
+  border-color: #e6e6e6 !important;
+}
+.bright .companies-page .divide-gray-700 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e6e6e6 !important;
+}
+.bright .companies-page .hover\:bg-gray-700\/20:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Tag badges on roadmap: force white background and dark text in bright mode */
+.bright .companies-page .text-xs.bg-gray-700 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e6e6e6 !important;
+}
+
+/* Remove the divider after the first question in each level for roadmap */
+.bright .companies-page .divide-y > :first-child {
+  border-top: none !important;
+}
+
+/* Also remove the border between the 1st and 2nd problem (no bottom border after first answer) */
+.bright .companies-page .divide-y > :nth-child(2) {
+  border-top: none !important;
+}
+
+/* Ensure Solve button text stays white on blue in bright mode */
+.bright .companies-page a.bg-blue-600, .bright .companies-page a.bg-blue-600 * {
+  color: white !important;
+}
+
+/* Remove all dividing lines between roadmap items in bright mode */
+.bright .companies-page .divide-y > :not([hidden]) ~ :not([hidden]) {
+  border-top: 0 !important;
+}
+
+/* SQL console: ensure header and body are fully white and text is dark in bright mode */
+.bright .console-panel {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e6e6e6 !important;
+}
+.bright .console-panel .h-12,
+.bright .console-panel .h-12 * {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+.bright .console-panel table thead th,
+.bright .console-panel table tbody td {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e6e6e6 !important;
+}
+.bright .console-panel .Play,
+.bright .console-panel .Database {
+  color: #0f172a !important;
+}
+
+
+/* ✅ Ensure white text inside blue buttons in bright mode */
+.light a.bg-blue-600,
+.light button.bg-blue-600,
+.light a.bg-blue-600 *,
+.light button.bg-blue-600 * {
+  color: #ffffff !important;
+}
+
+/* Gradient blue buttons */
+.light a[class*="from-blue"],
+.light button[class*="from-blue"],
+.light a[class*="from-blue"] *,
+.light button[class*="from-blue"] * {
+  color: #ffffff !important;
+}
+
+/* ✅ SQL Dashboard – selected chapter button text should stay white in bright mode */
+.light button.bg-blue-500,
+.light button.bg-blue-500 *,
+.light .bg-blue-500.text-white,
+.light .bg-blue-500.text-white * {
+  color: #ffffff !important;
+}

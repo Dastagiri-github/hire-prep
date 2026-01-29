@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { Database, BookOpen, ChevronRight, ChevronLeft } from 'lucide-react';
+import Pagination from '@/components/Pagination';
 
 interface SQLChapter {
   id: number;
@@ -24,6 +25,8 @@ export default function SQLDashboard() {
   const [chapters, setChapters] = useState<SQLChapter[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 1;
+  const problemsPerPage = 6;
+  const [problemPageByChapter, setProblemPageByChapter] = useState<Record<number, number>>({});
 
   useEffect(() => {
     const fetchChapters = async () => {
@@ -37,7 +40,7 @@ export default function SQLDashboard() {
     fetchChapters();
   }, []);
 
-  const totalPages = Math.ceil(chapters.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(chapters.length / itemsPerPage));
   const currentChapters = chapters.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -54,8 +57,8 @@ export default function SQLDashboard() {
 
   return (
     <div className="container mx-auto px-6 py-8 max-w-7xl">
-      <div className="mb-8 border-b border-white/10 pb-4 mt-18">
-        <h1 className="text-3xl font-bold text-white">
+      <div className="mb-8 border-b border-white/10 pb-4">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
           SQL Mastery
         </h1>
       </div>
@@ -81,7 +84,7 @@ export default function SQLDashboard() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0 mt-9">
+        <div className="flex-1 min-w-0">
             <div className="grid gap-6">
                 {currentChapters.map((chapter) => (
                 <div key={chapter.id} className="glass p-8 rounded-2xl border border-white/5 hover:border-blue-500/30 transition-all duration-300">
@@ -90,7 +93,14 @@ export default function SQLDashboard() {
                     </div>
                     
                     <div className="grid gap-3">
-                        {chapter.problems.map(problem => (
+                                {(() => {
+                                  const page = problemPageByChapter[chapter.id] || 1;
+                                  const totalProblemPages = Math.max(1, Math.ceil(chapter.problems.length / problemsPerPage));
+                                  const visibleProblems = chapter.problems.slice((page - 1) * problemsPerPage, page * problemsPerPage);
+
+                                  return (
+                                    <>
+                                      {visibleProblems.map(problem => (
                             <Link 
                                 key={problem.id} 
                                 href={`/sql/${problem.id}`}
@@ -107,7 +117,20 @@ export default function SQLDashboard() {
                                     <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-blue-400 transition-colors" />
                                 </div>
                             </Link>
-                        ))}
+                                      ))}
+
+                                      {chapter.problems.length > problemsPerPage && (
+                                        <div className="flex justify-center mt-4">
+                                          <Pagination
+                                            page={page}
+                                            totalPages={totalProblemPages}
+                                            onPage={(p) => setProblemPageByChapter(prev => ({ ...prev, [chapter.id]: p }))}
+                                          />
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                     </div>
                 </div>
                 ))}
@@ -118,30 +141,7 @@ export default function SQLDashboard() {
                     </div>
                 )}
 
-                {/* Pagination Controls */}
-                {chapters.length > 0 && (
-                <div className="flex justify-between items-center mt-8 pt-8 border-t border-white/10">
-                    <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors flex items-center gap-2"
-                    >
-                    <ChevronLeft className="w-4 h-4" /> Previous
-                    </button>
-                    
-                    <span className="text-gray-500 text-sm">
-                        Chapter {currentPage} of {totalPages}
-                    </span>
-
-                    <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors flex items-center gap-2"
-                    >
-                    Next <ChevronRight className="w-4 h-4" />
-                    </button>
-                </div>
-                )}
+                {/* Note: chapter-level pagination removed to avoid duplicate controls when per-chapter pagination is shown */}
             </div>
         </div>
       </div>
