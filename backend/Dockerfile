@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY requirements.txt .
+# Copy requirements from backend folder (build context is repo root)
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # --- Runtime stage ---
@@ -30,8 +31,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy app code (excluding __pycache__, .env, venv)
-COPY . .
+# Copy backend app code only
+COPY backend/ .
 
 EXPOSE 8000
 
