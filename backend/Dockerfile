@@ -1,25 +1,39 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim
+# Use Python 3.12-slim for a smaller, more secure image
+FROM python:3.12-slim AS builder
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container at /app
-COPY requirements.txt .
+# Install build tools for psycopg2
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install any needed packages specified in requirements.txt
+# Install Python dependencies into a virtual env
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the current directory contents into the container at /app
+# --- Runtime stage ---
+FROM python:3.12-slim AS runtime
+
+WORKDIR /app
+
+# Install libpq only (runtime dep for psycopg2)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy venv from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy app code (excluding __pycache__, .env, venv)
 COPY . .
 
-# Make port 8000 available to the world outside this container
 EXPOSE 8000
 
-# Define environment variable
-ENV MODULE_NAME="main"
-ENV VARIABLE_NAME="app"
-ENV PORT="8000"
-
-# Run app.py when the container launches
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Railway injects $PORT; run Alembic migrations then start server
+CMD alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}

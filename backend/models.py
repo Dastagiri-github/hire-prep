@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, JSON, Boolean
-from sqlalchemy.orm import relationship
-from database import Base
 import datetime
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
+
+from database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -17,19 +20,21 @@ class User(Base):
     submissions = relationship("Submission", back_populates="user")
     sql_submissions = relationship("SQLSubmission", back_populates="user")
 
+
 class Problem(Base):
     __tablename__ = "problems"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     description = Column(String)
-    difficulty = Column(String) # Easy, Medium, Hard
+    difficulty = Column(String)  # Easy, Medium, Hard
     tags = Column(JSON, default=[])
     companies = Column(JSON, default=[])
     sample_test_cases = Column(JSON, default=[])
     hidden_test_cases = Column(JSON, default=[])
 
     submissions = relationship("Submission", back_populates="problem")
+
 
 class Submission(Base):
     __tablename__ = "submissions"
@@ -39,22 +44,24 @@ class Submission(Base):
     problem_id = Column(Integer, ForeignKey("problems.id"))
     code = Column(String)
     language = Column(String)
-    status = Column(String) # Accepted, Wrong Answer, TLE
-    execution_time = Column(Integer) # ms
+    status = Column(String)  # Accepted, Wrong Answer, TLE
+    execution_time = Column(Integer)  # ms
     submitted_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="submissions")
     problem = relationship("Problem", back_populates="submissions")
+
 
 class SQLChapter(Base):
     __tablename__ = "sql_chapters"
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
-    content = Column(String) # Markdown content
+    content = Column(String)  # Markdown content
     order = Column(Integer, unique=True)
 
     problems = relationship("SQLProblem", back_populates="chapter")
+
 
 class SQLProblem(Base):
     __tablename__ = "sql_problems"
@@ -63,12 +70,13 @@ class SQLProblem(Base):
     chapter_id = Column(Integer, ForeignKey("sql_chapters.id"))
     title = Column(String)
     description = Column(String)
-    difficulty = Column(String, default="Easy") # Easy, Medium, Hard
-    setup_sql = Column(String) # Hidden
-    solution_sql = Column(String) # Hidden
-    
+    difficulty = Column(String, default="Easy")  # Easy, Medium, Hard
+    setup_sql = Column(String)  # Hidden
+    solution_sql = Column(String)  # Hidden
+
     chapter = relationship("SQLChapter", back_populates="problems")
     submissions = relationship("SQLSubmission", back_populates="problem")
+
 
 class SQLSubmission(Base):
     __tablename__ = "sql_submissions"
@@ -77,7 +85,7 @@ class SQLSubmission(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     problem_id = Column(Integer, ForeignKey("sql_problems.id"))
     query = Column(String)
-    status = Column(String) # Correct, Incorrect
+    status = Column(String)  # Correct, Incorrect
     submitted_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="sql_submissions")

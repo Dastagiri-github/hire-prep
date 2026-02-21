@@ -1,15 +1,19 @@
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel
+
 
 # User Schemas
 class UserBase(BaseModel):
     username: str
     email: str
 
+
 class UserCreate(UserBase):
     password: str
     target_companies: List[str] = []
+
 
 class User(UserBase):
     id: int
@@ -20,11 +24,13 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
+
 # Problem Schemas
 class TestCase(BaseModel):
     input: str
     output: str
     explanation: Optional[str] = None
+
 
 class ProblemBase(BaseModel):
     title: str
@@ -34,8 +40,10 @@ class ProblemBase(BaseModel):
     companies: List[str]
     sample_test_cases: List[TestCase]
 
+
 class ProblemCreate(ProblemBase):
     hidden_test_cases: List[TestCase]
+
 
 class Problem(ProblemBase):
     id: int
@@ -43,14 +51,17 @@ class Problem(ProblemBase):
     class Config:
         from_attributes = True
 
+
 # Submission Schemas
 class SubmissionBase(BaseModel):
     code: str
     language: str
     problem_id: int
 
+
 class SubmissionCreate(SubmissionBase):
     pass
+
 
 class Submission(SubmissionBase):
     id: int
@@ -65,13 +76,16 @@ class Submission(SubmissionBase):
     class Config:
         from_attributes = True
 
+
 # Auth Schemas
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class TokenData(BaseModel):
     username: Optional[str] = None
+
 
 # SQL Schemas
 class SQLProblemBase(BaseModel):
@@ -80,9 +94,11 @@ class SQLProblemBase(BaseModel):
     chapter_id: int
     difficulty: str = "Easy"
 
+
 class SQLProblemCreate(SQLProblemBase):
     setup_sql: str
     solution_sql: str
+
 
 class SQLProblem(SQLProblemBase):
     id: int
@@ -91,12 +107,15 @@ class SQLProblem(SQLProblemBase):
     class Config:
         from_attributes = True
 
+
 class SQLSubmissionBase(BaseModel):
     query: str
     problem_id: int
 
+
 class SQLSubmissionCreate(SQLSubmissionBase):
     pass
+
 
 class SQLSubmission(SQLSubmissionBase):
     id: int
@@ -107,13 +126,16 @@ class SQLSubmission(SQLSubmissionBase):
     class Config:
         from_attributes = True
 
+
 class SQLChapterBase(BaseModel):
     title: str
     content: str
     order: int
 
+
 class SQLChapterCreate(SQLChapterBase):
     pass
+
 
 class SQLChapter(SQLChapterBase):
     id: int
@@ -122,9 +144,11 @@ class SQLChapter(SQLChapterBase):
     class Config:
         from_attributes = True
 
+
 class SQLExecutionRequest(BaseModel):
     problem_id: int
     user_query: str
+
 
 class SQLExecutionResult(BaseModel):
     success: bool

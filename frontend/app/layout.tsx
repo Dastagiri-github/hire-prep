@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bright light">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#020617" />
         <script

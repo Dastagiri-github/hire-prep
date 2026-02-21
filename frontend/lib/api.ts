@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { env } from "./env";
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000', // FastAPI backend URL
+  baseURL: env.NEXT_PUBLIC_API_URL, // FastAPI backend URL
 });
 
 api.interceptors.request.use((config) => {
