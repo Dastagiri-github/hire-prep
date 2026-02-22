@@ -22,7 +22,7 @@ export default function Login() {
       formData.append("password", password);
 
       const response = await api.post("/auth/login", formData);
-      localStorage.setItem("token", response.data.access_token);
+      localStorage.setItem("access_token", response.data.access_token);
       router.push("/dashboard");
     } catch {
       setError("Invalid username or password");
@@ -34,7 +34,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 pt-1 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0f1e] to-black">
       <div className="glass-panel w-full max-w-sm p-6 rounded-2xl shadow-xl border border-white/10 relative overflow-hidden animate-fade-in">
-        
+
         {/* Top accent */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" />
 
@@ -98,19 +98,19 @@ export default function Login() {
 
           {/* Submit */}
           <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-md font-semibold shadow-md shadow-purple-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
-        >
-          {isLoading ? (
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            <>
-              Sign In
-              <LogIn className="w-4 h-4" />
-            </>
-          )}
-        </button>
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-md font-semibold shadow-md shadow-purple-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+          >
+            {isLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                Sign In
+                <LogIn className="w-4 h-4" />
+              </>
+            )}
+          </button>
 
         </form>
 

@@ -80,7 +80,12 @@ class Submission(SubmissionBase):
 # Auth Schemas
 class Token(BaseModel):
     access_token: str
-    token_type: str
+    token_type: str = "bearer"
+
+
+class RefreshResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
 
 
 class TokenData(BaseModel):

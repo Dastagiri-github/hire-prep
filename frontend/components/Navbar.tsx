@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Code2, LayoutDashboard, UserPlus, Trophy, LogOut, Database, Menu, X } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import api from '@/lib/api';
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -14,22 +15,33 @@ const Navbar = () => {
 
   const isHomePage = pathname === '/';
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
+  const checkAuth = useCallback(async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setIsLoggedIn(false);
+      return;
+    }
+    try {
+      await api.get('/auth/me');
+      setIsLoggedIn(true);
+    } catch {
+      // Token invalid or expired and refresh also failed → log out
+      localStorage.removeItem('access_token');
+      setIsLoggedIn(false);
+    }
+  }, []);
 
-    // Only apply scroll effects on home page where navbar is fixed
+  useEffect(() => {
+    checkAuth();
+
     if (isHomePage) {
-      const handleScroll = () => {
-        setScrolled(window.scrollY > 20);
-      };
+      const handleScroll = () => setScrolled(window.scrollY > 20);
       window.addEventListener('scroll', handleScroll);
       return () => window.removeEventListener('scroll', handleScroll);
     } else {
-      // On static navbar pages, always show glass effect
       setScrolled(true);
     }
-  }, [pathname, isHomePage]);
+  }, [pathname, isHomePage, checkAuth]);
 
   // Hide navbar on focused practice/editor pages to reduce distractions
   // Hide on /problem pages and /sql/[id] editor pages, but show on /sql dashboard
@@ -38,8 +50,13 @@ const Navbar = () => {
     if (pathname.startsWith('/sql/') && pathname !== '/sql') return null; // Hide on /sql/[id] but show on /sql
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Even if the server call fails, clear local state
+    }
+    localStorage.removeItem('access_token');
     setIsLoggedIn(false);
     router.push('/login');
   };
@@ -52,13 +69,13 @@ const Navbar = () => {
   const positionClass = isHomePage ? 'fixed' : 'static';
   // Always show glass effect on static navbar pages, conditionally on fixed navbar
   const glassClass = (isHomePage && scrolled) || !isHomePage ? 'glass' : 'bg-transparent';
-  
+
   return (
     <nav
       className={`${positionClass} top-0 left-0 right-0 z-50 transition-all duration-300 ${glassClass} `}
       style={{ height: 'var(--navbar-height)', marginTop: '1px' }}
     >
-        <div className="max-w-7xl mx-auto px-8 sm:px-6 lg:px-8 flex justify-between items-center h-full gap-4">
+      <div className="max-w-7xl mx-auto px-8 sm:px-6 lg:px-8 flex justify-between items-center h-full gap-4">
         <Link href="/" className="group flex items-center gap-3 cursor-pointer">
           <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 dark:from-blue-500/20 dark:to-purple-500/20 bright:from-blue-100 bright:to-purple-100 border border-blue-500/20 dark:border-blue-500/20 bright:border-blue-200 group-hover:border-blue-500/50 dark:group-hover:border-blue-500/50 bright:group-hover:border-blue-300 group-hover:scale-105 transition-all duration-300 shadow-sm">
             <Code2 className="w-6 h-6 text-blue-400 dark:text-blue-400 bright:text-[#2563eb] group-hover:text-blue-300 dark:group-hover:text-blue-300 bright:group-hover:text-[#1d4ed8] transition-colors" />

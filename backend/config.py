@@ -5,8 +5,9 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "HirePrep"
     SECRET_KEY: str = "YOUR_SECRET_KEY"  # Default for dev, override in prod
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
     # Database
     DATABASE_URL: str = "sqlite:///./hireprep.db"
     

@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -19,6 +19,21 @@ class User(Base):
 
     submissions = relationship("Submission", back_populates="user")
     sql_submissions = relationship("SQLSubmission", back_populates="user")
+    refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    expires_at = Column(DateTime)
+    revoked = Column(Boolean, default=False)
+
+    user = relationship("User", back_populates="refresh_tokens")
+
+
 
 
 class Problem(Base):
