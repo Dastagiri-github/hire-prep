@@ -39,10 +39,10 @@ export default function CompanyRoadmap({ params }: { params: Promise<{ name: str
           if (userRes?.data?.solved_ids) {
             setSolvedIds(new Set(userRes.data.solved_ids));
           }
-        } catch (uErr) {
+        } catch (uErr: any) {
           console.debug('Not authenticated or failed to fetch user (ignored)', uErr?.response?.status || uErr?.message);
         }
-        
+
         // Extract solved IDs from user stats (simplified)
         // Ideally we should have a dedicated endpoint for solved IDs
         // For now, let's assume we can get it or just fetch submissions
@@ -102,7 +102,7 @@ export default function CompanyRoadmap({ params }: { params: Promise<{ name: str
               <h2 className="text-xl font-bold text-white bright:text-black">{levelName}</h2>
               <span className="text-sm text-gray-400 bright:text-gray-600">{levelProblems.length} Problems</span>
             </div>
-            
+
             <div className="divide-y divide-gray-700 bright:divide-gray-200">
               {levelProblems.map((problem) => (
                 <div key={problem.id} className="p-4 flex items-center justify-between hover:bg-gray-700/20 bright:hover:bg-gray-50 transition">
@@ -119,7 +119,7 @@ export default function CompanyRoadmap({ params }: { params: Promise<{ name: str
                       </div>
                     </div>
                   </div>
-                  <Link 
+                  <Link
                     href={`/problem/${problem.id}`}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition"
                   >
@@ -127,7 +127,7 @@ export default function CompanyRoadmap({ params }: { params: Promise<{ name: str
                   </Link>
                 </div>
               ))}
-              
+
               {levelProblems.length === 0 && (
                 <div className="p-8 text-center text-gray-500">
                   No problems in this level yet.
