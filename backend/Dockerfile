@@ -37,4 +37,5 @@ COPY backend/ .
 EXPOSE 8000
 
 # Railway injects $PORT; run Alembic migrations then start server
-CMD alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Using 'sh -c' with ';' so uvicorn starts even if alembic has nothing to do
+CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
