@@ -78,13 +78,27 @@ def send_temp_password_email(to_email: str, name: str, username: str, temp_passw
     port = int(settings.SMTP_PORT)
     password = settings.SMTP_PASSWORD.replace(" ", "")
 
-    if port == 465:
-        with smtplib.SMTP_SSL(settings.SMTP_HOST, port, timeout=10) as server:
-            server.login(settings.SMTP_USER, password)
-            server.sendmail(from_addr, to_email, msg.as_string())
-    else:
-        with smtplib.SMTP(settings.SMTP_HOST, port, timeout=10) as server:
-            server.ehlo()
-            server.starttls()
-            server.login(settings.SMTP_USER, password)
-            server.sendmail(from_addr, to_email, msg.as_string())
+    def try_send(p: int) -> bool:
+        try:
+            if p == 465:
+                with smtplib.SMTP_SSL(settings.SMTP_HOST, p, timeout=10) as server:
+                    server.login(settings.SMTP_USER, password)
+                    server.sendmail(from_addr, to_email, msg.as_string())
+            else:
+                with smtplib.SMTP(settings.SMTP_HOST, p, timeout=10) as server:
+                    server.ehlo()
+                    server.starttls()
+                    server.login(settings.SMTP_USER, password)
+                    server.sendmail(from_addr, to_email, msg.as_string())
+            return True
+        except Exception as e:
+            print(f"[WARN] Failed to send email on port {p}: {e}")
+            return False
+
+    # Try original port first
+    if not try_send(port):
+        # Fallback to alternative port if the first one failed
+        fallback_port = 587 if port == 465 else 465
+        print(f"[INFO] Attempting fallback port {fallback_port}...")
+        if not try_send(fallback_port):
+            raise Exception("Failed to send email on both primary and fallback ports.")
