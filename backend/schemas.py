@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
@@ -18,7 +18,7 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     name: Optional[str] = None
-    dob: Optional[str] = None
+    dob: Optional[date] = None
     reset_password: int = 1
     target_companies: List[str]
     stats: Dict[str, Any]
