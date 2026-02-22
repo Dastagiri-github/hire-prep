@@ -61,7 +61,25 @@ def create_user(db: Session, user: schemas.UserCreate) -> tuple[models.User, str
     return db_user, temp_password
 
 
+def get_employee_by_username(db: Session, username: str):
+    return db.query(models.Employee).filter(models.Employee.username == username).first()
 
+
+def create_employee(db: Session, employee: schemas.EmployeeCreate) -> tuple[models.Employee, str]:
+    """Create employee with a temp password. Returns (employee, temp_password)."""
+    temp_password = generate_temp_password()
+    hashed_password = get_password_hash(temp_password)
+
+    db_employee = models.Employee(
+        username=employee.username,
+        email=employee.email,
+        name=employee.name,
+        hashed_password=hashed_password,
+    )
+    db.add(db_employee)
+    db.commit()
+    db.refresh(db_employee)
+    return db_employee, temp_password
 def get_problems(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Problem).offset(skip).limit(limit).all()
 

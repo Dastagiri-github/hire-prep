@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from cpp_executor import get_gpp_path
 from database import Base, engine
-from routers import auth, problems, recommendations, sql, stats, submissions
+from routers import auth, employee_auth, employee_dashboard, problems, recommendations, sql, stats, submissions
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -31,6 +31,8 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(employee_auth.router)
+app.include_router(employee_dashboard.router)
 app.include_router(problems.router)
 app.include_router(submissions.router)
 app.include_router(recommendations.router)

@@ -37,6 +37,29 @@ class RefreshToken(Base):
     user = relationship("User", back_populates="refresh_tokens")
 
 
+class Employee(Base):
+    __tablename__ = "employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True)
+    name = Column(String, nullable=True)
+    hashed_password = Column(String)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    refresh_tokens = relationship("EmployeeRefreshToken", back_populates="employee", cascade="all, delete-orphan")
+
+
+class EmployeeRefreshToken(Base):
+    __tablename__ = "employee_refresh_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, unique=True, index=True)
+    employee_id = Column(Integer, ForeignKey("employees.id"))
+    expires_at = Column(DateTime)
+    revoked = Column(Boolean, default=False)
+
+    employee = relationship("Employee", back_populates="refresh_tokens")
 
 
 class Problem(Base):

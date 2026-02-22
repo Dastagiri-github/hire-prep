@@ -28,6 +28,25 @@ class User(UserBase):
         from_attributes = True
 
 
+# Employee Schemas
+class EmployeeBase(BaseModel):
+    username: str
+    email: str
+
+
+class EmployeeCreate(EmployeeBase):
+    name: str
+
+
+class Employee(EmployeeBase):
+    id: int
+    name: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # Problem Schemas
 class TestCase(BaseModel):
     input: str
@@ -46,6 +65,15 @@ class ProblemBase(BaseModel):
 
 class ProblemCreate(ProblemBase):
     hidden_test_cases: List[TestCase]
+
+class ProblemUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    difficulty: Optional[str] = None
+    tags: Optional[List[str]] = None
+    companies: Optional[List[str]] = None
+    sample_test_cases: Optional[List[TestCase]] = None
+    hidden_test_cases: Optional[List[TestCase]] = None
 
 
 class Problem(ProblemBase):
@@ -114,6 +142,13 @@ class SQLProblemCreate(SQLProblemBase):
     setup_sql: str
     solution_sql: str
 
+class SQLProblemUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    chapter_id: Optional[int] = None
+    difficulty: Optional[str] = None
+    setup_sql: Optional[str] = None
+    solution_sql: Optional[str] = None
 
 class SQLProblem(SQLProblemBase):
     id: int
@@ -151,6 +186,10 @@ class SQLChapterBase(BaseModel):
 class SQLChapterCreate(SQLChapterBase):
     pass
 
+class SQLChapterUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    order: Optional[int] = None
 
 class SQLChapter(SQLChapterBase):
     id: int

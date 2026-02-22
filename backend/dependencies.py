@@ -49,3 +49,25 @@ def get_current_user_optional(
         return None
     user = crud.get_user_by_username(db, username=token_data.username)
     return user
+
+
+def get_current_employee(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)
+):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate employee credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, utils.SECRET_KEY, algorithms=[utils.ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = schemas.TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
+    employee = crud.get_employee_by_username(db, username=token_data.username)
+    if employee is None:
+        raise credentials_exception
+    return employee

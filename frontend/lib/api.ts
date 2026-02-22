@@ -77,4 +77,79 @@ api.interceptors.response.use(
   },
 );
 
+
+// ─────────────────────────────────────────────
+// Employee API Instance (Isolated Sessions)
+// ─────────────────────────────────────────────
+export const employeeApi = axios.create({
+  baseURL: env.NEXT_PUBLIC_API_URL,
+  withCredentials: true,
+});
+
+employeeApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('employee_access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+let isEmpRefreshing = false;
+let empFailedQueue: Array<{ resolve: (v: string) => void; reject: (e: unknown) => void }> = [];
+
+const processEmpQueue = (error: unknown, token: string | null) => {
+  empFailedQueue.forEach(({ resolve, reject }) => {
+    if (token) resolve(token);
+    else reject(error);
+  });
+  empFailedQueue = [];
+};
+
+employeeApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    const isAuthEndpoint =
+      originalRequest?.url?.includes('/employee/auth/login') ||
+      originalRequest?.url?.includes('/employee/auth/refresh') ||
+      originalRequest?.url?.includes('/employee/auth/logout');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+      if (isEmpRefreshing) {
+        return new Promise((resolve, reject) => {
+          empFailedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return employeeApi(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isEmpRefreshing = true;
+
+      try {
+        const { data } = await axios.post(
+          `${env.NEXT_PUBLIC_API_URL}/employee/auth/refresh`,
+          {},
+          { withCredentials: true },
+        );
+        const newToken = data.access_token;
+        localStorage.setItem('employee_access_token', newToken);
+        processEmpQueue(null, newToken);
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return employeeApi(originalRequest);
+      } catch (refreshError) {
+        processEmpQueue(refreshError, null);
+        localStorage.removeItem('employee_access_token');
+        window.location.href = '/employee-login';
+        return Promise.reject(refreshError);
+      } finally {
+        isEmpRefreshing = false;
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
+
 export default api;
