@@ -1,20 +1,23 @@
 """SMTP email service for sending transactional emails."""
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import resend
 
 from config import settings
 
 
 def send_temp_password_email(to_email: str, name: str, username: str, temp_password: str) -> None:
-    """Send a welcome email with the temporary password."""
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        # SMTP not configured — log and skip (dev mode)
+    """Send a welcome email with the temporary password via Resend."""
+    if not settings.RESEND_API_KEY:
+        # API not configured — log and skip (dev mode)
         print(f"[DEV] Temp password for {username}: {temp_password}")
         return
 
+    resend.api_key = settings.RESEND_API_KEY
     subject = "Welcome to HirePrep — Your Temporary Password"
-    from_addr = settings.SMTP_FROM or settings.SMTP_USER
+    from_addr = settings.SMTP_FROM
+
+    # Ensure from address is a valid email format if it's just a name
+    if "@" not in from_addr:
+        from_addr = f"{from_addr} <onboarding@resend.dev>" # fallback for testing
 
     html_body = f"""
     <html>
@@ -69,36 +72,14 @@ def send_temp_password_email(to_email: str, name: str, username: str, temp_passw
     </html>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = from_addr
-    msg["To"] = to_email
-    msg.attach(MIMEText(html_body, "html"))
-
-    port = int(settings.SMTP_PORT)
-    password = settings.SMTP_PASSWORD.replace(" ", "")
-
-    def try_send(p: int) -> bool:
-        try:
-            if p == 465:
-                with smtplib.SMTP_SSL(settings.SMTP_HOST, p, timeout=10) as server:
-                    server.login(settings.SMTP_USER, password)
-                    server.sendmail(from_addr, to_email, msg.as_string())
-            else:
-                with smtplib.SMTP(settings.SMTP_HOST, p, timeout=10) as server:
-                    server.ehlo()
-                    server.starttls()
-                    server.login(settings.SMTP_USER, password)
-                    server.sendmail(from_addr, to_email, msg.as_string())
-            return True
-        except Exception as e:
-            print(f"[WARN] Failed to send email on port {p}: {e}")
-            return False
-
-    # Try original port first
-    if not try_send(port):
-        # Fallback to alternative port if the first one failed
-        fallback_port = 587 if port == 465 else 465
-        print(f"[INFO] Attempting fallback port {fallback_port}...")
-        if not try_send(fallback_port):
-            raise Exception("Failed to send email on both primary and fallback ports.")
+    try:
+        r = resend.Emails.send({
+            "from": from_addr,
+            "to": to_email,
+            "subject": subject,
+            "html": html_body
+        })
+        print(f"[INFO] Email sent successfully via Resend. ID: {r.get('id')}")
+    except Exception as e:
+        print(f"[WARN] Failed to send email via Resend: {e}")
+        raise

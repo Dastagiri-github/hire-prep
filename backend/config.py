@@ -8,11 +8,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # SMTP — set these in Railway environment variables
-    SMTP_HOST: str = "smtp.gmail.com"
-    SMTP_PORT: int = 587
-    SMTP_USER: str =  ""
-    SMTP_PASSWORD: str = ""  # Gmail: use an App Password
+    # Email (Resend HTTP API)
+    RESEND_API_KEY: str = "" # Set in Railway
     SMTP_FROM: str = "HirePrep"  # e.g. HirePrep <noreply@yourdomain.com>
 
     # Database
