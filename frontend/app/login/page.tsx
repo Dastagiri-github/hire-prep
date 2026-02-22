@@ -23,7 +23,12 @@ export default function Login() {
 
       const response = await api.post("/auth/login", formData);
       localStorage.setItem("access_token", response.data.access_token);
-      router.push("/dashboard");
+      // First login: redirect to change-password page
+      if (response.data.reset_password === 1) {
+        router.push("/change-password");
+      } else {
+        router.push("/dashboard");
+      }
     } catch {
       setError("Invalid username or password");
     } finally {
