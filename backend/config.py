@@ -10,8 +10,14 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./hireprep.db"
     
-    # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    # CORS - set CORS_ORIGINS as a JSON array in Railway env vars for production
+    # e.g. ["https://hire-prep-beta.vercel.app","https://hire-prep-git-master-dastagiri-githubs-projects.vercel.app"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://hire-prep-beta.vercel.app",
+        "https://hire-prep-git-master-dastagiri-githubs-projects.vercel.app",
+    ]
     
     class Config:
         env_file = ".env"
