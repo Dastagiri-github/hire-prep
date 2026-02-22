@@ -45,3 +45,8 @@ Thumbs.db
 
 # Docker
 *.tar
+
+# Logs
+*.log
+logs/
+server.log

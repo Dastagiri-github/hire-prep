@@ -48,6 +48,7 @@ const Navbar = () => {
   if (pathname) {
     if (pathname.startsWith('/problem')) return null;
     if (pathname.startsWith('/sql/') && pathname !== '/sql') return null; // Hide on /sql/[id] but show on /sql
+    if (pathname.startsWith('/employee')) return null; // Hide Navbar entirely on employee dashboard and login/register pages
   }
 
   const handleLogout = async () => {

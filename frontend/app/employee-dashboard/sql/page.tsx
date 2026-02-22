@@ -2,6 +2,18 @@
 import { useEffect, useState } from "react";
 import { employeeApi } from "@/lib/api";
 import { Trash2, Edit, Plus, Database, AlertCircle, Server } from "lucide-react";
+import SQLChapterFormModal from "./components/SQLChapterFormModal";
+import SQLProblemFormModal from "./components/SQLProblemFormModal";
+
+interface SQLProblem {
+    id: number;
+    chapter_id: number;
+    title: string;
+    description: string;
+    difficulty: string;
+    setup_sql: string;
+    solution_sql: string;
+}
 
 interface SQLChapter {
     id: number;
@@ -11,16 +23,18 @@ interface SQLChapter {
     problems: SQLProblem[];
 }
 
-interface SQLProblem {
-    id: number;
-    chapter_id: number;
-    title: string;
-    difficulty: string;
-}
-
 export default function SQLManagement() {
     const [chapters, setChapters] = useState<SQLChapter[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Chapter Modal State
+    const [isChapterModalOpen, setIsChapterModalOpen] = useState(false);
+    const [editingChapter, setEditingChapter] = useState<SQLChapter | null>(null);
+
+    // Problem Modal State
+    const [isProblemModalOpen, setIsProblemModalOpen] = useState(false);
+    const [editingProblem, setEditingProblem] = useState<SQLProblem | null>(null);
+    const [activeChapterId, setActiveChapterId] = useState<number | null>(null);
 
     const fetchChapters = async () => {
         try {
@@ -63,8 +77,58 @@ export default function SQLManagement() {
         }
     };
 
+    const handleSaveChapter = (savedChapter: any) => {
+        if (editingChapter) {
+            // It's an update, preserve existing problems
+            setChapters(chapters.map(c => c.id === savedChapter.id ? { ...savedChapter, problems: c.problems } : c));
+        } else {
+            setChapters([...chapters, { ...savedChapter, problems: [] }]);
+        }
+        setIsChapterModalOpen(false);
+    };
+
+    const handleSaveProblem = (savedProblem: any) => {
+        setChapters(chapters.map(c => {
+            if (c.id === activeChapterId) {
+                if (editingProblem) {
+                    return { ...c, problems: c.problems.map(p => p.id === savedProblem.id ? savedProblem : p) };
+                } else {
+                    return { ...c, problems: [...c.problems, savedProblem] };
+                }
+            }
+            return c;
+        }));
+        setIsProblemModalOpen(false);
+    };
+
+    const openAddChapter = () => {
+        setEditingChapter(null);
+        setIsChapterModalOpen(true);
+    };
+
+    const openEditChapter = (chapter: SQLChapter) => {
+        setEditingChapter(chapter);
+        setIsChapterModalOpen(true);
+    };
+
+    const openAddProblem = (chapterId: number) => {
+        setActiveChapterId(chapterId);
+        setEditingProblem(null);
+        setIsProblemModalOpen(true);
+    };
+
+    const openEditProblem = (problem: SQLProblem, chapterId: number) => {
+        setActiveChapterId(chapterId);
+        setEditingProblem({ ...problem, chapter_id: chapterId });
+        // We fetch detailed problem data on demand because the chapter listing might not have full `setup_sql` etc.
+        // Actually, looking at the schemas, the `SQLChapter` schema fetches `List[SQLProblem]`, which has setup/solution omitted.
+        // We should fetch full details.
+        // For simplicity, we just pass the object. If fields are missing (like setup_sql), the user will see empty boxes on edit. Let's do a quick fetch
+        setIsProblemModalOpen(true);
+    };
+
     return (
-        <div className="space-y-8 animate-fade-in pb-12">
+        <div className="space-y-8 animate-fade-in pb-12 relative">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
@@ -74,7 +138,7 @@ export default function SQLManagement() {
                     <p className="text-gray-400 text-sm">Manage educational SQL Chapters and interactive Schema Problems.</p>
                 </div>
                 <button
-                    onClick={() => alert("Implementation placeholder for standard Chapter creation...")}
+                    onClick={openAddChapter}
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition-all w-full md:w-auto"
                 >
                     <Plus className="w-4 h-4" />
@@ -106,10 +170,10 @@ export default function SQLManagement() {
                                 </div>
 
                                 <div className="flex shrink-0 items-center gap-2">
-                                    <button onClick={() => alert("Placeholder to Add SQL Problem")} className="px-3 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-xs font-semibold hover:bg-blue-500/20 transition-colors flex items-center gap-1.5">
+                                    <button onClick={() => openAddProblem(chapter.id)} className="px-3 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-xs font-semibold hover:bg-blue-500/20 transition-colors flex items-center gap-1.5">
                                         <Plus className="w-3.5 h-3.5" /> Problem
                                     </button>
-                                    <button onClick={() => alert("Edit Chapter")} className="p-1.5 bg-white/5 text-gray-300 rounded hover:bg-white/10 hover:text-white transition-colors border border-white/10">
+                                    <button onClick={() => openEditChapter(chapter)} className="p-1.5 bg-white/5 text-gray-300 rounded hover:bg-white/10 hover:text-white transition-colors border border-white/10">
                                         <Edit className="w-4 h-4" />
                                     </button>
                                     <button onClick={() => handleDeleteChapter(chapter.id)} className="p-1.5 bg-red-500/10 text-red-400 rounded hover:bg-red-500/20 transition-colors border border-red-500/20">
@@ -133,7 +197,15 @@ export default function SQLManagement() {
                                                     <span className="text-sm font-medium text-gray-200">{prob.title}</span>
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <button onClick={() => alert("Edit problem setup/solution")} className="text-xs text-blue-400 hover:text-blue-300 font-medium">Edit</button>
+                                                    <button onClick={async () => {
+                                                        // Fetch full details of problem to populate the edit modal correctly since chapters API excludes SQL queries
+                                                        try {
+                                                            const fullProb = await employeeApi.get(`/sql/problems/${prob.id}`);
+                                                            openEditProblem(fullProb.data, chapter.id);
+                                                        } catch (e) {
+                                                            alert("Failed to load problem details to edit");
+                                                        }
+                                                    }} className="text-xs text-blue-400 hover:text-blue-300 font-medium">Edit</button>
                                                     <button onClick={() => handleDeleteProblem(prob.id, chapter.id)} className="text-xs text-red-500/70 hover:text-red-400 font-medium">Delete</button>
                                                 </div>
                                             </div>
@@ -144,6 +216,24 @@ export default function SQLManagement() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {isChapterModalOpen && (
+                <SQLChapterFormModal
+                    chapter={editingChapter}
+                    onClose={() => setIsChapterModalOpen(false)}
+                    onSave={handleSaveChapter}
+                    nextOrder={chapters.length > 0 ? Math.max(...chapters.map(c => c.order)) + 1 : 1}
+                />
+            )}
+
+            {isProblemModalOpen && activeChapterId !== null && (
+                <SQLProblemFormModal
+                    problem={editingProblem}
+                    chapterId={activeChapterId}
+                    onClose={() => setIsProblemModalOpen(false)}
+                    onSave={handleSaveProblem}
+                />
             )}
         </div>
     );

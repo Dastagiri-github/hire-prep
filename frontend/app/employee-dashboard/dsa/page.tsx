@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { employeeApi } from "@/lib/api";
 import { Trash2, Edit, Plus, AlertTriangle, Code2 } from "lucide-react";
+import ProblemFormModal from "./components/ProblemFormModal";
 
 interface TestCase {
     input: string;
@@ -10,7 +11,7 @@ interface TestCase {
 }
 
 interface Problem {
-    id: number;
+    id?: number;
     title: string;
     description: string;
     difficulty: string;
@@ -24,6 +25,9 @@ export default function DSAManagement() {
     const [problems, setProblems] = useState<Problem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingProblem, setEditingProblem] = useState<Problem | null>(null);
 
     const fetchProblems = async () => {
         try {
@@ -52,8 +56,28 @@ export default function DSAManagement() {
         }
     };
 
+    const handleSaveProblem = (savedProblem: Problem) => {
+        if (editingProblem) {
+            setProblems(problems.map(p => p.id === savedProblem.id ? savedProblem : p));
+        } else {
+            setProblems([...problems, savedProblem]);
+        }
+        setIsModalOpen(false);
+        setEditingProblem(null);
+    };
+
+    const openAddModal = () => {
+        setEditingProblem(null);
+        setIsModalOpen(true);
+    };
+
+    const openEditModal = (problem: Problem) => {
+        setEditingProblem(problem);
+        setIsModalOpen(true);
+    };
+
     return (
-        <div className="space-y-6 animate-fade-in pb-12">
+        <div className="space-y-6 animate-fade-in pb-12 relative">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/5 pb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
@@ -63,7 +87,7 @@ export default function DSAManagement() {
                     <p className="text-gray-400 text-sm">Create, edit, and organize Data Structures and Algorithms problems.</p>
                 </div>
                 <button
-                    onClick={() => alert("Implementation placeholder for full Add Form...")}
+                    onClick={openAddModal}
                     className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20 transition-all w-full md:w-auto"
                 >
                     <Plus className="w-4 h-4" />
@@ -92,8 +116,8 @@ export default function DSAManagement() {
                                 <div className="flex justify-between items-start mb-3">
                                     <h3 className="font-bold text-lg text-white group-hover:text-teal-400 tracking-tight leading-tight line-clamp-2">{problem.title}</h3>
                                     <span className={`px-2 py-0.5 rounded text-xs font-semibold ${problem.difficulty === "Easy" ? "bg-green-500/10 text-green-400 border border-green-500/20" :
-                                            problem.difficulty === "Medium" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
-                                                "bg-red-500/10 text-red-400 border border-red-500/20"
+                                        problem.difficulty === "Medium" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
+                                            "bg-red-500/10 text-red-400 border border-red-500/20"
                                         }`}>
                                         {problem.difficulty}
                                     </span>
@@ -114,14 +138,14 @@ export default function DSAManagement() {
 
                             <div className="flex items-center gap-2 mt-4 pt-4 border-t border-white/5">
                                 <button
-                                    onClick={() => alert(`Edit Problem ID: ${problem.id}`)}
+                                    onClick={() => openEditModal(problem)}
                                     className="flex-1 py-1.5 rounded bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-xs font-medium flex justify-center items-center gap-1.5 transition-colors border border-white/5"
                                 >
                                     <Edit className="w-3.5 h-3.5" />
                                     Edit
                                 </button>
                                 <button
-                                    onClick={() => handleDelete(problem.id)}
+                                    onClick={() => handleDelete(problem.id!)}
                                     className="p-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium flex justify-center items-center transition-colors border border-red-500/20"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -130,6 +154,14 @@ export default function DSAManagement() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {isModalOpen && (
+                <ProblemFormModal
+                    problem={editingProblem}
+                    onClose={() => setIsModalOpen(false)}
+                    onSave={handleSaveProblem}
+                />
             )}
         </div>
     );
