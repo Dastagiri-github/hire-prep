@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     # SMTP — set these in Railway environment variables
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
-    SMTP_USER: str =  "createartatvizag@gmail.com"
-    SMTP_PASSWORD: str = "rslh fozb eukn kodb"  # Gmail: use an App Password
+    SMTP_USER: str =  ""
+    SMTP_PASSWORD: str = ""  # Gmail: use an App Password
     SMTP_FROM: str = "HirePrep"  # e.g. HirePrep <noreply@yourdomain.com>
 
     # Database
