@@ -69,7 +69,9 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
             temp_password=temp_password,
         )
     except Exception as e:
-        print(f"[WARN] Failed to send welcome email: {e}")
+        import traceback
+        print(f"[ERROR] Failed to send welcome email:")
+        traceback.print_exc()
 
     return db_user
 
