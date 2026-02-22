@@ -11,12 +11,15 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str
-    target_companies: List[str] = []
+    name: str
+    dob: str  # ISO date string e.g. "1995-06-15"
 
 
 class User(UserBase):
     id: int
+    name: Optional[str] = None
+    dob: Optional[str] = None
+    reset_password: int = 1
     target_companies: List[str]
     stats: Dict[str, Any]
     created_at: datetime
@@ -81,6 +84,7 @@ class Submission(SubmissionBase):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    reset_password: int = 0  # 1 = redirect to change-password
 
 
 class RefreshResponse(BaseModel):
@@ -90,6 +94,12 @@ class RefreshResponse(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    temp_password: str
+    new_password: str
+    confirm_password: str
 
 
 # SQL Schemas

@@ -8,6 +8,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # SMTP — set these in Railway environment variables
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str =  "createartatvizag@gmail.com"
+    SMTP_PASSWORD: str = "rslh fozb eukn kodb"  # Gmail: use an App Password
+    SMTP_FROM: str = "HirePrep"  # e.g. HirePrep <noreply@yourdomain.com>
+
     # Database
     DATABASE_URL: str = "sqlite:///./hireprep.db"
     

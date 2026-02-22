@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import JSON, Boolean, Column, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from database import Base
@@ -12,7 +12,10 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     email = Column(String, unique=True, index=True)
+    name = Column(String, nullable=True)        # full name
+    dob = Column(Date, nullable=True)           # date of birth
     hashed_password = Column(String)
+    reset_password = Column(Integer, default=1) # 1 = must change, 0 = normal
     target_companies = Column(JSON, default=[])
     stats = Column(JSON, default={})
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

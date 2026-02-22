@@ -1,3 +1,7 @@
+import secrets
+import string
+from datetime import date
+
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
@@ -23,19 +27,39 @@ def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
 
-def create_user(db: Session, user: schemas.UserCreate):
-    hashed_password = get_password_hash(user.password)
+def generate_temp_password(length: int = 10) -> str:
+    """Generate a readable temporary password: e.g. HirePrep@a3Xk9"""
+    alphabet = string.ascii_letters + string.digits
+    suffix = "".join(secrets.choice(alphabet) for _ in range(length))
+    return f"HirePrep@{suffix}"
+
+
+def create_user(db: Session, user: schemas.UserCreate) -> tuple[models.User, str]:
+    """Create user with a temp password. Returns (user, temp_password)."""
+    temp_password = generate_temp_password()
+    hashed_password = get_password_hash(temp_password)
+
+    # Parse DOB string to date object
+    try:
+        dob = date.fromisoformat(user.dob) if user.dob else None
+    except ValueError:
+        dob = None
+
     db_user = models.User(
         username=user.username,
         email=user.email,
+        name=user.name,
+        dob=dob,
         hashed_password=hashed_password,
-        target_companies=user.target_companies,
+        reset_password=1,
+        target_companies=[],
         stats={"totalSolved": 0, "currentStreak": 0, "topics": {}},
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    return db_user
+    return db_user, temp_password
+
 
 
 def get_problems(db: Session, skip: int = 0, limit: int = 100):
