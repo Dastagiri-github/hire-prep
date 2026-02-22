@@ -2,7 +2,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://your-backend.railway.app/:path*"
+            "destination": "https://hire-prep-production.up.railway.app/:path*"
         }
     ],
     "headers": [
