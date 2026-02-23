@@ -51,12 +51,12 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const companies = ['All', ...Array.from(new Set(problems.flatMap(p => p.companies)))];
+  const companies = ['All', ...Array.from(new Set(problems.flatMap(p => p.companies || [])))];
   const topics = ['All', ...Array.from(new Set(problems.flatMap(p => p.tags || [])))];
 
   const filteredProblems = problems.filter(p => {
-    const matchesCompany = selectedCompany === 'All' || p.companies.includes(selectedCompany);
-    const matchesTopic = selectedTopic === 'All' || (p.tags && p.tags.includes(selectedTopic));
+    const matchesCompany = selectedCompany === 'All' || (p.companies || []).includes(selectedCompany);
+    const matchesTopic = selectedTopic === 'All' || (p.tags || []).includes(selectedTopic);
     return matchesCompany && matchesTopic;
   });
 
@@ -169,8 +169,8 @@ export default function Dashboard() {
                   key={company}
                   onClick={() => setSelectedCompany(company)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border ${selectedCompany === company
-                      ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.2)]'
-                      : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/20'
+                    ? 'bg-blue-500/20 border-blue-500/50 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.2)]'
+                    : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/20'
                     }`}
                 >
                   {company}
@@ -201,8 +201,8 @@ export default function Dashboard() {
                   key={topic}
                   onClick={() => setSelectedTopic(topic)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border ${selectedTopic === topic
-                      ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
-                      : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/20'
+                    ? 'bg-purple-500/20 border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
+                    : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:text-white hover:border-white/20'
                     }`}
                 >
                   {topic}
@@ -238,13 +238,13 @@ export default function Dashboard() {
               className="glass-panel p-6 rounded-xl hover:border-blue-500/30 transition-all duration-300 hover:-translate-y-1 group animate-fade-in"
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-center">
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <h2 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">{problem.title}</h2>
                     <span className={`px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${problem.difficulty === 'Easy' ? 'bg-green-500/10 text-green-400 border-green-500/20 shadow-[0_0_10px_rgba(74,222,128,0.1)]' :
-                        problem.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20 shadow-[0_0_10px_rgba(250,204,21,0.1)]' :
-                          'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(248,113,113,0.1)]'
+                      problem.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20 shadow-[0_0_10px_rgba(250,204,21,0.1)]' :
+                        'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(248,113,113,0.1)]'
                       }`}>
                       {problem.difficulty}
                     </span>
@@ -264,14 +264,14 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                        <div className="flex items-center h-full">
-                          <Link
-                            href={`/problem/${problem.id}`}
-                            className="opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all duration-300 shadow-lg shadow-blue-500/20"
-                          >
-                            <span className="text-white">Solve</span> <ArrowRight className="w-4 h-4" />
-                          </Link>
-                        </div>
+                <div className="flex items-center h-full">
+                  <Link
+                    href={`/problem/${problem.id}`}
+                    className="opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all duration-300 shadow-lg shadow-blue-500/20"
+                  >
+                    <span className="text-white">Solve</span> <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             </div>
           ))}
