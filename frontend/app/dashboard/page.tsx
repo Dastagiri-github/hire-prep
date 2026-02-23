@@ -32,7 +32,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const probsRes = await api.get('/problems');
+        const probsRes = await api.get('/problems/');
         setProblems(probsRes.data);
       } catch (error) {
         console.error('Failed to fetch problems');
