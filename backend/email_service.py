@@ -1,23 +1,23 @@
 """SMTP email service for sending transactional emails."""
-import resend
+import requests
 
 from config import settings
 
 
 def send_temp_password_email(to_email: str, name: str, username: str, temp_password: str) -> None:
-    """Send a welcome email with the temporary password via Resend."""
-    if not settings.RESEND_API_KEY:
+    """Send a welcome email with the temporary password via Brevo."""
+    if not settings.BREVO_API_KEY:
         # API not configured — log and skip (dev mode)
         print(f"[DEV] Temp password for {username}: {temp_password}")
         return
-
-    resend.api_key = settings.RESEND_API_KEY
     subject = "Welcome to HirePrep — Your Temporary Password"
+    
     from_addr = settings.SMTP_FROM
-
-    # Ensure from address is a valid email format if it's just a name
-    if "@" not in from_addr:
-        from_addr = f"{from_addr} <onboarding@resend.dev>" # fallback for testing
+    sender_name = "HirePrep"
+    sender_email = from_addr
+    if "<" in from_addr and ">" in from_addr:
+        sender_name = from_addr.split("<")[0].strip()
+        sender_email = from_addr.split("<")[1].split(">")[0].strip()
 
     html_body = f"""
     <html>
@@ -72,14 +72,25 @@ def send_temp_password_email(to_email: str, name: str, username: str, temp_passw
     </html>
     """
 
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": settings.BREVO_API_KEY,
+        "content-type": "application/json"
+    }
+    payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": to_email, "name": name}],
+        "subject": subject,
+        "htmlContent": html_body
+    }
+
     try:
-        r = resend.Emails.send({
-            "from": from_addr,
-            "to": to_email,
-            "subject": subject,
-            "html": html_body
-        })
-        print(f"[INFO] Email sent successfully via Resend. ID: {r.get('id')}")
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        print(f"[INFO] Email sent successfully via Brevo. ID: {response.json().get('messageId')}")
     except Exception as e:
-        print(f"[WARN] Failed to send email via Resend: {e}")
+        print(f"[WARN] Failed to send email via Brevo: {e}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"[WARN] Brevo Error details: {e.response.text}")
         raise

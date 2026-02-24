@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # Email (Resend HTTP API)
-    RESEND_API_KEY: str = "" # Set in Railway
+    # Email (Brevo / Sendinblue API)
+    BREVO_API_KEY: str = "" # Set in Railway / .env
     SMTP_FROM: str = "HirePrep"  # e.g. HirePrep <noreply@yourdomain.com>
 
     # Database
