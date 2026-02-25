@@ -28,6 +28,23 @@
   --surface-border: rgba(255, 255, 255, 0.1);
 }
 
+/* Glass card effect */
+.glass-card {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+/* Glass effect for navbar */
+.glass {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Bright / Light Mode overrides */
 .light {
   --background: #f8fafc; /* Background Light gray (provided) */

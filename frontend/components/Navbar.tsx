@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Code2, LayoutDashboard, UserPlus, Trophy, LogOut, Database, Menu, X } from 'lucide-react';
+import { Code2, LayoutDashboard, UserPlus, Trophy, LogOut, Database, Menu, X, Brain } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import api from '@/lib/api';
 
@@ -109,6 +109,13 @@ const Navbar = () => {
             <Database className="w-4 h-4" />
             SQL
           </Link>
+          <Link
+            href="/aptitude"
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${isActive('/aptitude')}`}
+          >
+            <Brain className="w-4 h-4" />
+            Aptitude
+          </Link>
         </div>
 
         <div className="flex items-center gap-4">
@@ -163,6 +170,9 @@ const Navbar = () => {
               </Link>
               <Link href="/sql" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isActive('/sql')}`}>
                 <Database className="w-4 h-4" /> SQL
+              </Link>
+              <Link href="/aptitude" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isActive('/aptitude')}`}>
+                <Brain className="w-4 h-4" /> Aptitude
               </Link>
               <div className="border-t border-white/5 mt-2 pt-2" />
               {!isLoggedIn ? (

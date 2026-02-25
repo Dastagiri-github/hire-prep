@@ -131,3 +131,31 @@ class SQLSubmission(Base):
 
     user = relationship("User", back_populates="sql_submissions")
     problem = relationship("SQLProblem", back_populates="submissions")
+
+
+class AptitudeChapter(Base):
+    __tablename__ = "aptitude_chapters"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    content = Column(String)  # Markdown content
+    order = Column(Integer, unique=True)
+
+    problems = relationship("AptitudeProblem", back_populates="chapter")
+
+
+class AptitudeProblem(Base):
+    __tablename__ = "aptitude_problems"
+
+    id = Column(Integer, primary_key=True, index=True)
+    chapter_id = Column(Integer, ForeignKey("aptitude_chapters.id"))
+    title = Column(String)
+    description = Column(String)
+    question_type = Column(String)  # MCQ, NUMERICAL
+    difficulty = Column(String, default="Easy")  # Easy, Medium, Hard
+    options = Column(JSON, default=[])  # For MCQ questions
+    correct_answer = Column(String)  # For MCQ: option index, For Numerical: numeric value
+    explanation = Column(String)  # Detailed explanation
+    time_limit = Column(Integer, default=60)  # seconds
+
+    chapter = relationship("AptitudeChapter", back_populates="problems")
