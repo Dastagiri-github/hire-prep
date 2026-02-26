@@ -2,9 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [feature/aptitude]
   pull_request:
-    branches: [main]
+    branches: [feature/aptitude]
 
 jobs:
   backend-ci:
