@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 import crud
 import database
@@ -74,6 +76,78 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
         traceback.print_exc()
 
     return db_user
+
+
+# ─────────────────────────────────────────────
+# POST /auth/google
+# ─────────────────────────────────────────────
+@router.post("/google", response_model=schemas.Token)
+def google_auth(
+    response: Response,
+    body: schemas.GoogleAuthRequest,
+    db: Session = Depends(database.get_db),
+):
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            body.credential, 
+            google_requests.Request(), 
+            settings.GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=60
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid Google token: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Google Auth Error: {str(e)}")
+
+    email = idinfo.get("email")
+    name = idinfo.get("name")
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Email not provided by Google")
+
+    user = db.query(models.User).filter(models.User.email == email).first()
+
+    if not user:
+        # Create user via OAuth
+        username = email.split("@")[0]
+        base_username = username
+        counter = 1
+        while db.query(models.User).filter(models.User.username == username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
+            
+        user_in = schemas.UserCreate(
+            username=username,
+            email=email,
+            name=name or "",
+            dob=""
+        )
+        try:
+            user = crud.create_oauth_user(db=db, user=user_in)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"User creation failed: {str(e)}")
+
+    # Issue access token (short-lived)
+    access_token = utils.create_access_token(data={"sub": user.username})
+
+    # Issue refresh token and persist in DB
+    refresh_token_str = utils.create_refresh_token(data={"sub": user.username})
+    expires_at = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    db_refresh = models.RefreshToken(
+        token=refresh_token_str,
+        user_id=user.id,
+        expires_at=expires_at,
+    )
+    db.add(db_refresh)
+    db.commit()
+
+    _set_refresh_cookie(response, refresh_token_str)
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "reset_password": user.reset_password,
+    }
 
 
 # ─────────────────────────────────────────────

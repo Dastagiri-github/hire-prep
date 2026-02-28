@@ -4,6 +4,23 @@ TEST_USER = {
     "password": "testpassword123",
 }
 
+from unittest.mock import patch
+
+
+def test_google_auth(client):
+    """Test successful Google OAuth login/registration."""
+    with patch("routers.auth.id_token.verify_oauth2_token") as mock_verify:
+        mock_verify.return_value = {
+            "email": "googleuser@example.com",
+            "name": "Google User",
+        }
+        response = client.post("/auth/google", json={"credential": "fake_token"})
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert "refresh_token" in response.cookies
+
 
 def test_register_user(client):
     """Test successful user registration."""

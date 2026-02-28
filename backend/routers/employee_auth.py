@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
 
 import crud
 import database
@@ -73,6 +75,73 @@ def register(employee: schemas.EmployeeCreate, db: Session = Depends(database.ge
         traceback.print_exc()
 
     return db_employee
+
+
+# ─────────────────────────────────────────────
+# POST /employee/auth/google
+# ─────────────────────────────────────────────
+@router.post("/google", response_model=schemas.Token)
+def google_auth(
+    response: Response,
+    body: schemas.GoogleAuthRequest,
+    db: Session = Depends(database.get_db),
+):
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            body.credential, 
+            google_requests.Request(), 
+            settings.GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=60
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid Google token: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Google Auth Error: {str(e)}")
+
+    email = idinfo.get("email")
+    name = idinfo.get("name")
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Email not provided by Google")
+
+    employee = db.query(models.Employee).filter(models.Employee.email == email).first()
+
+    if not employee:
+        # Create employee via OAuth
+        username = email.split("@")[0]
+        base_username = username
+        counter = 1
+        while db.query(models.Employee).filter(models.Employee.username == username).first():
+            username = f"{base_username}{counter}"
+            counter += 1
+            
+        employee_in = schemas.EmployeeCreate(
+            username=username,
+            email=email,
+            name=name or ""
+        )
+        employee = crud.create_oauth_employee(db=db, employee=employee_in)
+
+    access_token = utils.create_access_token(data={"sub": employee.username})
+    refresh_token_str = utils.create_refresh_token(data={"sub": employee.username})
+    
+    expires_at = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    db_refresh = models.EmployeeRefreshToken(
+        token=refresh_token_str,
+        employee_id=employee.id,
+        expires_at=expires_at,
+    )
+    db.add(db_refresh)
+    db.commit()
+
+    _set_refresh_cookie(response, refresh_token_str)
+
+    # Employees don't have a reset_password column yet, so send 0
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "reset_password": 0, 
+    }
 
 
 # ─────────────────────────────────────────────

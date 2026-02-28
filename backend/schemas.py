@@ -130,6 +130,10 @@ class ChangePasswordRequest(BaseModel):
     confirm_password: str
 
 
+class GoogleAuthRequest(BaseModel):
+    credential: str
+
+
 # SQL Schemas
 class SQLProblemBase(BaseModel):
     title: str
@@ -197,6 +201,60 @@ class SQLChapter(SQLChapterBase):
 
     class Config:
         from_attributes = True
+
+
+# Aptitude Schemas
+class AptitudeChapterBase(BaseModel):
+    title: str
+    content: str
+    order: int
+
+
+class AptitudeChapterCreate(AptitudeChapterBase):
+    pass
+
+
+class AptitudeChapter(AptitudeChapterBase):
+    id: int
+    problems: List["AptitudeProblem"] = []
+
+    class Config:
+        from_attributes = True
+
+
+class AptitudeProblemBase(BaseModel):
+    title: str
+    description: str
+    question_type: str
+    difficulty: str = "Easy"
+    options: List[str] = []
+    correct_answer: str
+    explanation: str
+    time_limit: int = 60
+
+
+class AptitudeProblemCreate(AptitudeProblemBase):
+    chapter_id: int
+
+
+class AptitudeProblem(AptitudeProblemBase):
+    id: int
+    chapter_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class AptitudeSubmissionRequest(BaseModel):
+    problem_id: int
+    selected_answer: str  # For MCQ: option index, For Numerical: numeric value
+
+
+class AptitudeEvaluationResult(BaseModel):
+    is_correct: bool
+    correct_answer: str
+    explanation: str
+    user_answer: str
 
 
 class SQLExecutionRequest(BaseModel):

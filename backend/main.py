@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from cpp_executor import get_gpp_path
 from database import Base, engine
-from routers import auth, employee_auth, employee_dashboard, problems, recommendations, sql, stats, submissions
+from routers import auth, employee_auth, employee_dashboard, problems, recommendations, sql, stats, submissions, aptitude
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -38,15 +38,16 @@ app.include_router(submissions.router)
 app.include_router(recommendations.router)
 app.include_router(stats.router)
 app.include_router(sql.router)
+app.include_router(aptitude.router)
 
 
 @app.on_event("startup")
 async def startup_event():
     print("\n--- Environment Check ---")
 
-    java_status = "✅ Found" if shutil.which("javac") else "❌ Not Found (Install JDK)"
-    python_status = "✅ Found" if shutil.which("python") else "❌ Not Found"
-    cpp_status = "✅ Found" if get_gpp_path() else "❌ Not Found (Install MinGW)"
+    java_status = "[OK] Found" if shutil.which("javac") else "[FAIL] Not Found (Install JDK)"
+    python_status = "[OK] Found" if shutil.which("python") else "[FAIL] Not Found"
+    cpp_status = "[OK] Found" if get_gpp_path() else "[FAIL] Not Found (Install MinGW)"
 
     print(f"{'Java':<10}: {java_status}")
     print(f"{'C++':<10}: {cpp_status}")

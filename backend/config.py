@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./hireprep.db"
     
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+    
     # CORS - set CORS_ORIGINS as a JSON array in Railway env vars for production
     # e.g. ["https://hire-prep-beta.vercel.app","https://hire-prep-git-master-dastagiri-githubs-projects.vercel.app"]
     CORS_ORIGINS: List[str] = [
