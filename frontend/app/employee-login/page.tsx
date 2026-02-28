@@ -4,6 +4,7 @@ import { employeeApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogIn, User, Lock, ShieldAlert } from "lucide-react";
+import { GoogleLogin } from "@react-oauth/google";
 
 export default function EmployeeLogin() {
     const [username, setUsername] = useState("");
@@ -29,6 +30,20 @@ export default function EmployeeLogin() {
             router.push("/employee-dashboard");
         } catch {
             setError("Invalid employee credentials");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleSuccess = async (credentialResponse: any) => {
+        setIsLoading(true);
+        setError("");
+        try {
+            const response = await employeeApi.post("/employee/auth/google", { credential: credentialResponse.credential });
+            localStorage.setItem("employee_access_token", response.data.access_token);
+            router.push("/employee-dashboard");
+        } catch (err: any) {
+            setError(err.response?.data?.detail || "Google authentication failed");
         } finally {
             setIsLoading(false);
         }
@@ -116,6 +131,24 @@ export default function EmployeeLogin() {
                     </button>
 
                 </form>
+
+                <div className="relative my-6 z-10">
+                    <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-white/10"></div>
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                        <span className="bg-[#0f1423] text-gray-500 px-2">OR</span>
+                    </div>
+                </div>
+
+                <div className="flex justify-center z-10 relative mb-4">
+                    <GoogleLogin
+                        onSuccess={handleGoogleSuccess}
+                        onError={() => setError("Google Sign-In failed")}
+                        theme="filled_black"
+                        shape="pill"
+                    />
+                </div>
 
                 {/* Footer */}
                 <div className="mt-5 text-center text-xs text-gray-400 relative z-10">

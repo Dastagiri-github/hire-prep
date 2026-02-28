@@ -45,9 +45,9 @@ app.include_router(aptitude.router)
 async def startup_event():
     print("\n--- Environment Check ---")
 
-    java_status = "✅ Found" if shutil.which("javac") else "❌ Not Found (Install JDK)"
-    python_status = "✅ Found" if shutil.which("python") else "❌ Not Found"
-    cpp_status = "✅ Found" if get_gpp_path() else "❌ Not Found (Install MinGW)"
+    java_status = "[OK] Found" if shutil.which("javac") else "[FAIL] Not Found (Install JDK)"
+    python_status = "[OK] Found" if shutil.which("python") else "[FAIL] Not Found"
+    cpp_status = "[OK] Found" if get_gpp_path() else "[FAIL] Not Found (Install MinGW)"
 
     print(f"{'Java':<10}: {java_status}")
     print(f"{'C++':<10}: {cpp_status}")

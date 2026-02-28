@@ -61,6 +61,29 @@ def create_user(db: Session, user: schemas.UserCreate) -> tuple[models.User, str
     return db_user, temp_password
 
 
+def create_oauth_user(db: Session, user: schemas.UserCreate) -> models.User:
+    """Create user via OAuth without a temporary password."""
+    try:
+        dob = date.fromisoformat(user.dob) if user.dob else None
+    except ValueError:
+        dob = None
+
+    db_user = models.User(
+        username=user.username,
+        email=user.email,
+        name=user.name,
+        dob=dob,
+        hashed_password=None,
+        reset_password=0,
+        target_companies=[],
+        stats={"totalSolved": 0, "currentStreak": 0, "topics": {}},
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
 def get_employee_by_username(db: Session, username: str):
     return db.query(models.Employee).filter(models.Employee.username == username).first()
 
@@ -80,6 +103,22 @@ def create_employee(db: Session, employee: schemas.EmployeeCreate) -> tuple[mode
     db.commit()
     db.refresh(db_employee)
     return db_employee, temp_password
+
+
+def create_oauth_employee(db: Session, employee: schemas.EmployeeCreate) -> models.Employee:
+    """Create employee via OAuth without a temporary password."""
+    db_employee = models.Employee(
+        username=employee.username,
+        email=employee.email,
+        name=employee.name,
+        hashed_password=None,
+    )
+    db.add(db_employee)
+    db.commit()
+    db.refresh(db_employee)
+    return db_employee
+
+
 def get_problems(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Problem).offset(skip).limit(limit).all()
 

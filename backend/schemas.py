@@ -130,6 +130,10 @@ class ChangePasswordRequest(BaseModel):
     confirm_password: str
 
 
+class GoogleAuthRequest(BaseModel):
+    credential: str
+
+
 # SQL Schemas
 class SQLProblemBase(BaseModel):
     title: str
