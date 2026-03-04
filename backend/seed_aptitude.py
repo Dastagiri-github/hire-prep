@@ -42,7 +42,7 @@ def seed_aptitude_data():
             "question_type": "MCQ",
             "difficulty": "Easy",
             "options": ["5% increase", "5% decrease", "No change", "2% increase"],
-            "correct_answer": "0",  # No change
+            "correct_answer": "No change",  # No change
             "explanation": "Let original price = 100. After 25% increase: 100 × 1.25 = 125. After 20% decrease: 125 × 0.8 = 100. Net change = 0%",
             "time_limit": 60
         },
@@ -77,7 +77,7 @@ def seed_aptitude_data():
             "question_type": "MCQ",
             "difficulty": "Easy",
             "options": ["40", "42", "44", "46"],
-            "correct_answer": "1",  # 42
+            "correct_answer": "42",  # 42
             "explanation": "The pattern is: 1×2=2, 2×3=6, 3×4=12, 4×5=20, 5×6=30, 6×7=42",
             "time_limit": 45
         },
@@ -88,7 +88,7 @@ def seed_aptitude_data():
             "question_type": "MCQ",
             "difficulty": "Medium",
             "options": ["His own", "His son's", "His father's", "His nephew's"],
-            "correct_answer": "1",  # His son's
+            "correct_answer": "His son's",  # His son's
             "explanation": "Since he has no brother or sister, 'my father's son' refers to himself. So 'that man's father is me', meaning the photograph is of his son.",
             "time_limit": 60
         },
@@ -101,7 +101,7 @@ def seed_aptitude_data():
             "question_type": "MCQ",
             "difficulty": "Medium",
             "options": ["Permanent", "Temporary", "Eternal", "Lasting"],
-            "correct_answer": "1",  # Temporary
+            "correct_answer": "Temporary",  # Temporary
             "explanation": "Ephemeral means lasting for a very short time, which is similar to temporary.",
             "time_limit": 30
         },
@@ -117,7 +117,7 @@ def seed_aptitude_data():
                 "Neither him nor me are going to the party.",
                 "Neither him nor me is going to the party."
             ],
-            "correct_answer": "1",  # Neither he nor I is going to the party
+            "correct_answer": "Neither he nor I is going to the party.",  # Neither he nor I is going to the party
             "explanation": "When using 'neither...nor', the verb agrees with the subject closer to it. Here 'I' is closer, so we use 'is'. Also, 'he' and 'I' are subject pronouns.",
             "time_limit": 45
         }
