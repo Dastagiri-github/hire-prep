@@ -197,12 +197,63 @@
 /* Feature card title that adapts to theme */
 .feature-title { color: var(--foreground); }
 
+/* unified heading gradient class (used on dashboard/sql/aptitude pages) */
+.page-heading-gradient {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: 'Inter', sans-serif;
   min-height: 100vh;
   overflow-x: hidden;
+}
+
+/* #########################################################################
+   Custom bright/light-mode fixes added during UI polishing
+   ######################################################################### */
+
+/* Dashboard filter headings should be black in bright/light mode */
+.bright .dashboard-filter-heading,
+.light .dashboard-filter-heading {
+  color: #000 !important;
+}
+
+/* SQL problem sidebar background and link text for bright/light mode */
+.bright .sql-sidebar,
+.light .sql-sidebar {
+  background-color: rgba(0,0,0,0.2) !important;
+}
+.bright .sql-sidebar a,
+.light .sql-sidebar a {
+  /* keep links white on dark background in bright/light mode */
+  color: #fff !important;
+}
+.bright .sql-sidebar a:hover,
+.light .sql-sidebar a:hover {
+  background-color: rgba(255,255,255,0.1) !important;
+}
+
+/* Aptitude question page container adjustments */
+.bright .aptitude-container,
+.light .aptitude-container {
+  background-color: #fff !important;
+  color: #000 !important;
+}
+
+/* Ensure any text forced to white inside aptitude page is readable */
+.bright .aptitude-container .text-white,
+.light .aptitude-container .text-white {
+  color: #000 !important;
+}
+
+/* make nav buttons readable in bright/light mode on aptitude pages */
+.bright .aptitude-container .hover\:text-white:hover,
+.light .aptitude-container .hover\:text-white:hover {
+  color: #000 !important;
 }
 
 /* Custom Scrollbar */

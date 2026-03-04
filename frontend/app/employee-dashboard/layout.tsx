@@ -13,6 +13,7 @@ import {
     Brain
 } from "lucide-react";
 import { employeeApi } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function EmployeeDashboardLayout({
     children,
@@ -20,26 +21,21 @@ export default function EmployeeDashboardLayout({
     children: React.ReactNode;
 }) {
     const router = useRouter();
+    const auth = useAuth();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
-        // Simple basic check to ensure token is present in localStorage
-        if (!localStorage.getItem("employee_access_token")) {
+        // if we don't have an employee token in context, bounce to login
+        if (!auth.employeeToken) {
             router.push("/employee-login");
         }
-    }, [router]);
+    }, [router, auth.employeeToken]);
 
     const handleLogout = async () => {
-        try {
-            await employeeApi.post("/employee/auth/logout");
-        } catch (error) {
-            console.warn("Logout failed on server", error);
-        } finally {
-            localStorage.removeItem("employee_access_token");
-            router.push("/employee-login");
-        }
+        await auth.logout("employee");
+        router.push("/employee-login");
     };
 
     if (!isClient) return null;

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { employeeApi } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 interface EmployeeAuthGuardProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface EmployeeAuthGuardProps {
 }
 
 export default function EmployeeAuthGuard({ children, requireAuth = true, redirectTo = "/employee-login" }: EmployeeAuthGuardProps) {
+  const auth = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -17,22 +19,23 @@ export default function EmployeeAuthGuard({ children, requireAuth = true, redire
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem("employee_access_token");
+        const token = auth.employeeToken;
         if (!token && requireAuth) {
           router.push(redirectTo);
           return;
         }
 
         if (token) {
-          // Verify token by calling employee/me endpoint
+          // Verify token by calling employee/me endpoint. If this fails the
+          // interceptor will eventually clear the token and redirect as well.
           await employeeApi.get("/employee/auth/me");
           setIsAuthenticated(true);
         } else if (!requireAuth) {
           setIsAuthenticated(true);
         }
       } catch (error) {
-        // Token is invalid, clear it and redirect
         localStorage.removeItem("employee_access_token");
+        auth.logout("employee");
         if (requireAuth) {
           router.push(redirectTo);
         } else {
@@ -44,7 +47,7 @@ export default function EmployeeAuthGuard({ children, requireAuth = true, redire
     };
 
     checkAuth();
-  }, [requireAuth, redirectTo, router]);
+  }, [requireAuth, redirectTo, router, auth.employeeToken]);
 
   if (isLoading) {
     return (

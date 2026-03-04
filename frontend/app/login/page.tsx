@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api, { employeeApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { LogIn, User, Lock, Building2 } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
@@ -13,6 +14,16 @@ export default function Login() {
   const [error, setError] = useState("");
   const [userType, setUserType] = useState<"user" | "employee">("user");
   const router = useRouter();
+  const auth = useAuth();
+
+  // if a token already exists for the current userType, redirect immediately
+  useEffect(() => {
+    const key = userType === "employee" ? "employee" : "user";
+    const existing = userType === "employee" ? auth.employeeToken : auth.userToken;
+    if (existing) {
+      router.push(userType === "employee" ? "/employee-dashboard" : "/dashboard");
+    }
+  }, [userType, auth, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,8 +40,9 @@ export default function Login() {
       const redirectPath = userType === "employee" ? "/employee-dashboard" : "/dashboard";
 
       const response = await apiInstance.post(endpoint, formData);
-      localStorage.setItem(tokenKey, response.data.access_token);
-      
+      // overwrite any existing session for this type
+      auth.login(response.data.access_token, userType === "employee" ? "employee" : "user");
+
       if (response.data.reset_password === 1 && userType === "user") {
         router.push("/change-password");
       } else {
@@ -53,8 +65,8 @@ export default function Login() {
       const redirectPath = userType === "employee" ? "/employee-dashboard" : "/dashboard";
 
       const response = await apiInstance.post(endpoint, { credential: credentialResponse.credential });
-      localStorage.setItem(tokenKey, response.data.access_token);
-      
+      auth.login(response.data.access_token, userType === "employee" ? "employee" : "user");
+
       if (response.data.reset_password === 1 && userType === "user") {
         router.push("/change-password");
       } else {

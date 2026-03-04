@@ -154,7 +154,8 @@ export default function Dashboard() {
           {/* Company Filter */}
           <div>
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-gray-200 text-sm uppercase tracking-wider flex items-center gap-2">
+              {/* custom class for global bright/light override */}
+              <h3 className="dashboard-filter-heading font-bold text-gray-200 bright:text-black text-sm uppercase tracking-wider flex items-center gap-2">
                 <Filter className="w-4 h-4 text-blue-400" />
                 Company
               </h3>
@@ -186,7 +187,7 @@ export default function Dashboard() {
           {/* Topic Filter */}
           <div>
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-bold text-gray-200 text-sm uppercase tracking-wider flex items-center gap-2">
+              <h3 className="dashboard-filter-heading font-bold text-gray-200 bright:text-black text-sm uppercase tracking-wider flex items-center gap-2">
                 <Search className="w-4 h-4 text-purple-400" />
                 Topic
               </h3>
@@ -225,7 +226,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="w-full lg:w-3/4">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-sm">
+          <h1 className="page-heading-gradient text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent drop-shadow-sm">
             Problem Dashboard
           </h1>
           <div className="text-sm text-gray-400 font-mono bg-white/5 px-3 py-1 rounded-lg border border-white/10">

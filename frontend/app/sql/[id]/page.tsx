@@ -123,10 +123,10 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
             </button>
         </div>
     ) : (
-    <div className="h-full border-r border-white/5 dark:border-white/5 bright:border-bright-border bg-gray-900/20 dark:bg-gray-900/20 bright:bg-gray-50 flex flex-col min-w-[300px] backdrop-blur-sm ml-4 mb-6 mr-6">
+    <div className="sql-sidebar h-full border-r border-white/5 dark:border-white/5 bright:border-bright-border bg-gray-900/20 dark:bg-gray-900/20 bright:bg-gray-50 flex flex-col min-w-[300px] backdrop-blur-sm ml-4 mb-6 mr-6">
             <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
                 <div className="prose prose-invert max-w-none">
-                    <h2 className="text-xl font-bold text-white dark:text-white bright:text-bright-foreground mb-4 flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-white dark:text-white bright:text-black mb-4 flex items-center gap-2">
                         Problem Description
                     </h2>
                     <div className="text-gray-300 dark:text-gray-300 bright:text-gray-700 leading-relaxed bg-white/5 dark:bg-white/5 bright:bg-gray-50 p-4 rounded-xl border border-white/5 dark:border-white/5 bright:border-bright-border hover:border-white/10 dark:hover:border-white/10 bright:hover:border-bright-primary transition-colors">
@@ -256,9 +256,14 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
                 </div>
             </div>
 
-            <div className="flex-1 flex overflow-hidden relative h-full pt-4">
+                <div className="flex-1 flex overflow-hidden relative h-full pt-4">
                 {/* Sidebar */}
-                    <div className={`border-r border-white/5 dark:border-white/5 bright:border-bright-border bg-gray-900/30 dark:bg-gray-900/30 bright:bg-white flex flex-col overflow-y-auto shrink-0 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-72 opacity-100' : 'w-0 opacity-0 overflow-hidden pointer-events-none'}`}>
+                    {/* use a darker/black background in bright mode instead of gray
+                        preserve the border but remove the white bg to reduce washout */}
+                    {/* make the problem list darker/black in all themes rather than
+                        the pale gray; bright mode already uses black/20, and the
+                        same looks good in dark too */}
+                    <div className={`sql-sidebar border-r border-white/5 dark:border-white/5 bright:border-bright-border bg-black/20 dark:bg-black/20 flex flex-col overflow-y-auto shrink-0 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-72 opacity-100' : 'w-0 opacity-0 overflow-hidden pointer-events-none'}`}>
                     <div className="p-6">
                         <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-6 flex items-center gap-2">
                             <Code2 className="w-4 h-4" />
@@ -271,15 +276,15 @@ export default function SQLWorkspace({ params }: { params: Promise<{ id: string 
                                     <div className="space-y-1">
                                         {chapter.problems.map(p => (
                                             <Link
-                                                key={p.id}
-                                                href={`/sql/${p.id}`}
-                                                className={`block px-4 py-2 text-sm rounded-lg transition-all duration-200 cursor-pointer ${p.id === problem.id
-                                                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
-                                                    : 'text-gray-400 hover:bg-white/5 hover:text-gray-200 hover:translate-x-1'
-                                                    }`}
-                                            >
-                                                {p.title}
-                                            </Link>
+                                                    key={p.id}
+                                                    href={`/sql/${p.id}`}
+                                                    className={`block px-4 py-2 text-sm rounded-lg transition-all duration-200 cursor-pointer ${p.id === problem.id
+                                                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
+                                                        : 'text-gray-400 bright:text-black hover:bg-white/5 bright:hover:bg-gray-100 hover:text-gray-200 bright:hover:text-black hover:translate-x-1'
+                                                        }`}
+                                                >
+                                                    {p.title}
+                                                </Link>
                                         ))}
                                     </div>
                                 </div>

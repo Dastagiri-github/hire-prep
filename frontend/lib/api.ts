@@ -66,6 +66,9 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         localStorage.removeItem('access_token');
+        // notify other tabs that we logged out due to missing/expired refresh token
+        localStorage.setItem('logout_user', Date.now().toString());
+        localStorage.removeItem('logout_user');
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {
@@ -141,6 +144,8 @@ employeeApi.interceptors.response.use(
       } catch (refreshError) {
         processEmpQueue(refreshError, null);
         localStorage.removeItem('employee_access_token');
+        localStorage.setItem('logout_employee', Date.now().toString());
+        localStorage.removeItem('logout_employee');
         window.location.href = '/employee-login';
         return Promise.reject(refreshError);
       } finally {

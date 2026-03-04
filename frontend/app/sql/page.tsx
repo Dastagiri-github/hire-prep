@@ -60,7 +60,7 @@ export default function SQLDashboard() {
     <AuthGuard>
       <div className="container mx-auto px-6 py-8 max-w-7xl">
       <div className="mb-8 border-b border-white/10 pb-4">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+        <h1 className="page-heading-gradient text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
           SQL Mastery
         </h1>
       </div>

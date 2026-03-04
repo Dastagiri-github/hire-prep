@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface AuthGuardProps {
 }
 
 export default function AuthGuard({ children, requireAuth = true, redirectTo = "/login" }: AuthGuardProps) {
+  const auth = useAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -17,22 +19,26 @@ export default function AuthGuard({ children, requireAuth = true, redirectTo = "
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem("access_token");
+        const token = auth.userToken;
         if (!token && requireAuth) {
           router.push(redirectTo);
           return;
         }
 
         if (token) {
-          // Verify token by calling /auth/me
+          // Verify token by calling /auth/me; if it fails the global
+          // interceptor will log the user out and redirect.
           await api.get("/auth/me");
           setIsAuthenticated(true);
         } else if (!requireAuth) {
           setIsAuthenticated(true);
         }
       } catch (error) {
-        // Token is invalid, clear it and redirect
+        // If we land here it means the token was invalid; explicitly
+        // clear it and redirect. The context listener will also update
+        // other tabs automatically.
         localStorage.removeItem("access_token");
+        auth.logout("user");
         if (requireAuth) {
           router.push(redirectTo);
         } else {
@@ -44,7 +50,7 @@ export default function AuthGuard({ children, requireAuth = true, redirectTo = "
     };
 
     checkAuth();
-  }, [requireAuth, redirectTo, router]);
+  }, [requireAuth, redirectTo, router, auth.userToken]);
 
   if (isLoading) {
     return (

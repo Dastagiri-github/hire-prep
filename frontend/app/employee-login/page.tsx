@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { employeeApi } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { LogIn, User, Lock, ShieldAlert } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
@@ -12,6 +13,14 @@ export default function EmployeeLogin() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const router = useRouter();
+    const auth = useAuth();
+
+    // redirect if already logged in as employee
+    useEffect(() => {
+        if (auth.employeeToken) {
+            router.push("/employee-dashboard");
+        }
+    }, [auth.employeeToken, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,8 +32,7 @@ export default function EmployeeLogin() {
             formData.append("password", password);
 
             const response = await employeeApi.post("/employee/auth/login", formData);
-            // Store entirely separately to avoid overlap with standard users
-            localStorage.setItem("employee_access_token", response.data.access_token);
+            auth.login(response.data.access_token, "employee");
 
             // Navigate to the secure employee dashboard
             router.push("/employee-dashboard");
@@ -40,7 +48,7 @@ export default function EmployeeLogin() {
         setError("");
         try {
             const response = await employeeApi.post("/employee/auth/google", { credential: credentialResponse.credential });
-            localStorage.setItem("employee_access_token", response.data.access_token);
+            auth.login(response.data.access_token, "employee");
             router.push("/employee-dashboard");
         } catch (err: any) {
             setError(err.response?.data?.detail || "Google authentication failed");

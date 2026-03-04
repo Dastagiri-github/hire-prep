@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Code2, LayoutDashboard, UserPlus, Trophy, LogOut, Database, Menu, X, Brain } from 'lucide-react';
@@ -9,31 +10,19 @@ import api from '@/lib/api';
 const Navbar = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // authentication state is derived from context
+  const auth = useAuth();
+  const isLoggedIn = !!auth.userToken;
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isHomePage = pathname === '/';
 
-  const checkAuth = useCallback(async () => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      setIsLoggedIn(false);
-      return;
-    }
-    try {
-      await api.get('/auth/me');
-      setIsLoggedIn(true);
-    } catch {
-      // Token invalid or expired and refresh also failed → log out
-      localStorage.removeItem('access_token');
-      setIsLoggedIn(false);
-    }
-  }, []);
+  // authentication check is no longer needed here; the AuthProvider
+  // keeps userToken up-to-date and the AuthGuard ensures the token is
+  // validated when pages require it.
 
   useEffect(() => {
-    checkAuth();
-
     if (isHomePage) {
       const handleScroll = () => setScrolled(window.scrollY > 20);
       window.addEventListener('scroll', handleScroll);
@@ -41,7 +30,7 @@ const Navbar = () => {
     } else {
       setScrolled(true);
     }
-  }, [pathname, isHomePage, checkAuth]);
+  }, [pathname, isHomePage]);
 
   // Hide navbar on focused practice/editor pages to reduce distractions
   // Hide on /problem pages and /sql/[id] editor pages, but show on /sql dashboard
@@ -52,13 +41,7 @@ const Navbar = () => {
   }
 
   const handleLogout = async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch {
-      // Even if the server call fails, clear local state
-    }
-    localStorage.removeItem('access_token');
-    setIsLoggedIn(false);
+    await auth.logout('user');
     router.push('/login');
   };
 

@@ -140,7 +140,7 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900">
+      <div className="aptitude-container min-h-screen bg-slate-900 bright:bg-white bright:text-black">
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
         </div>
@@ -150,12 +150,12 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
 
   if (!chapter || !currentProblem) {
     return (
-      <div className="min-h-screen bg-slate-900">
+      <div className="min-h-screen bg-slate-900 bright:bg-white bright:text-black">
         <div className="max-w-4xl mx-auto px-4 py-12">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-white mb-4">Chapter not found</h1>
+            <h1 className="text-3xl font-bold text-white bright:text-black mb-4">Chapter not found</h1>
             <Link href="/aptitude">
-              <button className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+              <button className="px-6 py-3 bg-purple-600 text-white bright:text-white rounded-lg hover:bg-purple-700">
                 Back to Aptitude
               </button>
             </Link>
@@ -167,22 +167,22 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-slate-900">
+      <div className="min-h-screen bg-slate-900 bright:bg-white bright:text-black">
       {/* Header */}
       <div className="border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/aptitude">
-                <button className="flex items-center gap-2 px-4 py-2 text-gray-400 hover:text-white transition-colors">
+                <button className="flex items-center gap-2 px-4 py-2 text-gray-400 bright:text-black hover:text-white bright:hover:text-black transition-colors">
                   <ChevronLeft className="w-4 h-4" />
                   Back to Chapters
                 </button>
               </Link>
               <div className="h-6 w-px bg-gray-700"></div>
               <div>
-                <h1 className="text-lg font-semibold text-white">{chapter.title}</h1>
-                <p className="text-sm text-gray-400">
+                <h1 className="text-lg font-semibold text-white bright:text-black">{chapter.title}</h1>
+                <p className="text-sm text-gray-400 bright:text-black">
                   Problem {currentProblemIndex + 1} of {chapter.problems.length}
                 </p>
               </div>
@@ -192,14 +192,14 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
               <button
                 onClick={handlePrevProblem}
                 disabled={!prevProblem && currentProblemIndex === 0}
-                className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-lg bg-white/5 bright:bg-gray-200 text-gray-400 bright:text-black hover:text-white bright:hover:text-black hover:bg-white/10 bright:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={handleNextProblem}
                 disabled={!nextProblem && currentProblemIndex === chapter.problems.length - 1}
-                className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-lg bg-white/5 bright:bg-gray-200 text-gray-400 bright:text-black hover:text-white bright:hover:text-black hover:bg-white/10 bright:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -217,11 +217,11 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
               <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getDifficultyColor(currentProblem.difficulty)}`}>
                 {currentProblem.difficulty}
               </span>
-              <span className="text-gray-400 text-sm flex items-center gap-1">
+              <span className="text-gray-400 bright:text-black text-sm flex items-center gap-1">
                 <Clock className="w-4 h-4" />
                 {currentProblem.time_limit}s
               </span>
-              <span className="text-gray-400 text-sm">
+              <span className="text-gray-400 bright:text-black text-sm">
                 {currentProblem.question_type === 'MCQ' ? '📝 Multiple Choice' : '🔢 Numerical Answer'}
               </span>
             </div>
@@ -229,8 +229,8 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
 
           {/* Problem Description */}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-4">{currentProblem.title}</h2>
-            <p className="text-gray-300 leading-relaxed whitespace-pre-line">{currentProblem.description}</p>
+            <h2 className="text-2xl font-bold text-white bright:text-black mb-4">{currentProblem.title}</h2>
+            <p className="text-gray-300 bright:text-black leading-relaxed whitespace-pre-line">{currentProblem.description}</p>
           </div>
 
           {/* Answer Options */}
@@ -245,7 +245,7 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
                       className={`p-4 rounded-lg border transition-all duration-200 text-left ${
                         selectedAnswer === index.toString()
                           ? 'border-purple-500 bg-purple-500/20 text-purple-300'
-                          : 'border-gray-600 bg-gray-800/50 text-gray-300 hover:border-gray-500 hover:bg-gray-800'
+                          : 'border-gray-600 bg-gray-800/50 text-gray-300 bright:border-gray-300 bright:bg-white bright:text-black hover:border-gray-500 hover:bg-gray-800 bright:hover:bg-gray-100' 
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -270,7 +270,7 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
                     value={selectedAnswer}
                     onChange={(e) => setSelectedAnswer(e.target.value)}
                     placeholder="Enter your numerical answer..."
-                    className="w-full p-4 rounded-lg border border-gray-600 bg-gray-800/50 text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                    className="w-full p-4 rounded-lg border border-gray-600 bg-gray-800/50 bright:bg-white bright:border-gray-300 text-white bright:text-black placeholder-gray-400 bright:placeholder-gray-500 focus:border-purple-500 focus:outline-none"
                   />
                 </div>
               )}
@@ -279,7 +279,7 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
               <button
                 onClick={handleSubmitAnswer}
                 disabled={!selectedAnswer.trim() || submitting}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white bright:text-black font-semibold rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/25"
               >
                 {submitting ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
@@ -315,7 +315,7 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
                   </span>
                 </div>
                 
-                <div className="space-y-2 text-gray-300">
+                <div className="space-y-2 text-gray-300 bright:text-black">
                   <p><strong>Your answer:</strong> {evaluation.user_answer}</p>
                   <p><strong>Correct answer:</strong> {evaluation.correct_answer}</p>
                 </div>
@@ -324,7 +324,7 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
               {/* Explanation */}
               <div className="p-6 rounded-lg bg-blue-500/20 border border-blue-500/30">
                 <h3 className="text-lg font-semibold text-blue-400 mb-3">Explanation</h3>
-                <p className="text-gray-300 leading-relaxed whitespace-pre-line">{evaluation.explanation}</p>
+                <p className="text-gray-300 bright:text-black leading-relaxed whitespace-pre-line">{evaluation.explanation}</p>
               </div>
 
               {/* Navigation Buttons */}
@@ -332,14 +332,14 @@ export default function AptitudeChapterPage({ params }: { params: Promise<{ id: 
                 <button
                   onClick={handlePrevProblem}
                   disabled={!prevProblem && currentProblemIndex === 0}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all duration-300"
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 bright:bg-gray-200 hover:bg-gray-600 bright:hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-white bright:text-black font-semibold rounded-lg transition-all duration-300"
                 >
                   <ChevronLeft className="w-5 h-5" />
                   Previous
                 </button>
                 <button
                   onClick={handleNextProblem}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25"
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white bright:text-black font-semibold rounded-lg transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25"
                 >
                   {nextProblem || currentProblemIndex < chapter.problems.length - 1 ? (
                     <>
