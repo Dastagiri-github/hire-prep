@@ -126,3 +126,30 @@ export function EmployeeChapterSkeleton() {
         </div>
     );
 }
+
+export function CompanySkeleton() {
+    return (
+        <div className="glass-panel p-6 rounded-xl relative overflow-hidden animate-pulse">
+            <div className="flex items-center justify-between mb-6">
+                <div className="p-3 bg-white/5 rounded-xl border border-white/5 w-14 h-14">
+                    <Skeleton className="w-full h-full rounded-md" />
+                </div>
+                <div className="p-2 rounded-full w-9 h-9">
+                    <Skeleton className="w-full h-full rounded-full" />
+                </div>
+            </div>
+
+            <div className="relative z-10">
+                <Skeleton className="h-6 w-3/4 max-w-[200px] mb-2 rounded" />
+                <div className="flex items-center justify-between text-sm">
+                    <Skeleton className="h-4 w-1/2 rounded" />
+                    <Skeleton className="h-5 w-8 rounded" />
+                </div>
+            </div>
+
+            <div className="mt-6 w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                {/* Empty bar skeleton */}
+            </div>
+        </div>
+    );
+}

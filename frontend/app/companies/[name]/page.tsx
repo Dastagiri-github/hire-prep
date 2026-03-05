@@ -3,6 +3,7 @@ import { useEffect, useState, use } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { CheckCircle2, Circle, Lock } from 'lucide-react';
+import { ProblemSkeleton, Skeleton } from '@/components/Skeleton';
 
 interface Problem {
   id: number;
@@ -17,6 +18,7 @@ export default function CompanyRoadmap({ params }: { params: Promise<{ name: str
   const [problems, setProblems] = useState<Problem[]>([]);
   const [solvedIds, setSolvedIds] = useState<Set<number>>(new Set());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,6 +71,8 @@ export default function CompanyRoadmap({ params }: { params: Promise<{ name: str
         }
         setProblems([]);
         setErrorMsg(error?.response?.data?.detail || error?.message || 'Failed to fetch data');
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
@@ -96,46 +100,55 @@ export default function CompanyRoadmap({ params }: { params: Promise<{ name: str
       </div>
 
       <div className="space-y-8">
-        {Object.entries(levels).map(([levelName, levelProblems], idx) => (
-          <div key={levelName} className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden dark:bg-gray-800 bright:bg-white bright:border-gray-200 bright:text-black">
-            <div className="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center dark:bg-gray-800 bright:bg-white bright:border-gray-200">
-              <h2 className="text-xl font-bold text-white bright:text-black">{levelName}</h2>
-              <span className="text-sm text-gray-400 bright:text-gray-600">{levelProblems.length} Problems</span>
-            </div>
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-1/4 mb-6 rounded-lg" />
+            {Array.from({ length: 4 }).map((_, index) => (
+              <ProblemSkeleton key={index} />
+            ))}
+          </div>
+        ) : (
+          Object.entries(levels).map(([levelName, levelProblems], idx) => (
+            <div key={levelName} className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden dark:bg-gray-800 bright:bg-white bright:border-gray-200 bright:text-black">
+              <div className="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center dark:bg-gray-800 bright:bg-white bright:border-gray-200">
+                <h2 className="text-xl font-bold text-white bright:text-black">{levelName}</h2>
+                <span className="text-sm text-gray-400 bright:text-gray-600">{levelProblems.length} Problems</span>
+              </div>
 
-            <div className="divide-y divide-gray-700 bright:divide-gray-200">
-              {levelProblems.map((problem) => (
-                <div key={problem.id} className="p-4 flex items-center justify-between hover:bg-gray-700/20 bright:hover:bg-gray-50 transition">
-                  <div className="flex items-center gap-4">
-                    <Circle className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <h3 className="font-medium text-white bright:text-gray-900">{problem.title}</h3>
-                      <div className="flex gap-2 mt-1">
-                        {problem.tags.map(tag => (
-                          <span key={tag} className="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-300 bright:bg-white bright:text-gray-700 bright:border bright:border-gray-200">
-                            {tag}
-                          </span>
-                        ))}
+              <div className="divide-y divide-gray-700 bright:divide-gray-200">
+                {levelProblems.map((problem) => (
+                  <div key={problem.id} className="p-4 flex items-center justify-between hover:bg-gray-700/20 bright:hover:bg-gray-50 transition">
+                    <div className="flex items-center gap-4">
+                      <Circle className="w-5 h-5 text-gray-400" />
+                      <div>
+                        <h3 className="font-medium text-white bright:text-gray-900">{problem.title}</h3>
+                        <div className="flex gap-2 mt-1">
+                          {problem.tags.map(tag => (
+                            <span key={tag} className="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-300 bright:bg-white bright:text-gray-700 bright:border bright:border-gray-200">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
+                    <Link
+                      href={`/problem/${problem.id}`}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition"
+                    >
+                      Solve
+                    </Link>
                   </div>
-                  <Link
-                    href={`/problem/${problem.id}`}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition"
-                  >
-                    Solve
-                  </Link>
-                </div>
-              ))}
+                ))}
 
-              {levelProblems.length === 0 && (
-                <div className="p-8 text-center text-gray-500">
-                  No problems in this level yet.
-                </div>
-              )}
+                {levelProblems.length === 0 && (
+                  <div className="p-8 text-center text-gray-500">
+                    No problems in this level yet.
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
