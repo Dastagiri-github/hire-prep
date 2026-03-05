@@ -111,7 +111,29 @@ def run_sql(
             status=status,
         )
         db.add(submission)
+
+        # --- Log performance for ML recommendation engine ---
+        attempt_count = (
+            db.query(models.SQLSubmission)
+            .filter(
+                models.SQLSubmission.user_id == current_user.id,
+                models.SQLSubmission.problem_id == problem.id,
+            )
+            .count()
+        ) + 1  # +1 because current submission not yet committed
+        chapter_tag = problem.chapter.title if problem.chapter else "SQL"
+        perf_log = models.UserPerformanceLog(
+            user_id=current_user.id,
+            problem_id=problem.id,
+            problem_type="sql",
+            tags=[chapter_tag],
+            difficulty=problem.difficulty,
+            status=status,
+            attempt_number=attempt_count,
+        )
+        db.add(perf_log)
         db.commit()
+
 
     return result
 

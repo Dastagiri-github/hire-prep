@@ -19,9 +19,31 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 from cpp_executor import execute_cpp_code
 from java_executor import execute_java_code
+
+
+def normalize_output_comparison(actual: str, expected: str) -> bool:
+    """Normalize outputs for comparison (CodeChef style)"""
+    try:
+        # Try JSON parsing first
+        actual_obj = json.loads(actual)
+        expected_obj = json.loads(expected)
+        return actual_obj == expected_obj
+    except:
+        try:
+            # Try literal evaluation
+            actual_obj = ast.literal_eval(actual)
+            expected_obj = ast.literal_eval(expected)
+            return actual_obj == expected_obj
+        except:
+            # Fallback to string comparison with normalization
+            # Remove extra whitespace, normalize quotes, handle case differences
+            actual_norm = actual.strip().replace(" ", "").replace("'", '"').lower()
+            expected_norm = expected.strip().replace(" ", "").replace("'", '"').lower()
+            return actual_norm == expected_norm
 
 
 # Mock Execution Function (Replace with actual API call)
@@ -49,68 +71,79 @@ def execute_python_code(code: str, input_data: str):
             (node for node in tree.body if isinstance(node, ast.FunctionDef)), None
         )
         if not func_def:
-            # If no function, maybe it's a script? Just run it?
-            # But we need to inject input.
-            return {"output": "", "error": "No function definition found"}
+            # If no function, run as script with input injection
+            return execute_python_script(code, input_data)
 
         func_name = func_def.name
         args = [arg.arg for arg in func_def.args.args]
     except Exception as e:
         return {"output": "", "error": f"Parse Error: {str(e)}"}
 
-    # Pre-process input data to handle comma-separated assignments
-    # e.g. "nums = [1,2], target = 3" -> "nums = [1,2]\ntarget = 3"
-    formatted_input = re.sub(r",\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=", r"\n\1 =", input_data)
-
-    # Indent subsequent lines to match the try block indentation (4 spaces)
-    indented_input = formatted_input.replace("\n", "\n    ")
-
-    # Create footer
-    footer = f"""
-# --- Test Harness ---
-import json
+    # Enhanced test harness for Two Sum style problems
+    test_harness = f'''
 import sys
+import json
+import re
+from typing import List, Any
 
-try:
-    # Inject Input
-    {indented_input}
+# Read input from stdin
+input_data = sys.stdin.read().strip()
+
+# Enhanced input parsing for Two Sum format
+def parse_input(input_str):
+    # Try regex parsing first (for "nums = [2,7,11,15], target = 9" format)
+    nums_match = re.search(r'nums\\s*=\\s*\\[(.*?)\\]', input_str)
+    target_match = re.search(r'target\\s*=\\s*(\\d+)', input_str)
     
-    # Call Function
-    # We assume the input_data sets variables matching the function arguments
-    # or we pass the variables that were set.
-    # Let's try to pass arguments by name if they exist in locals
+    if nums_match and target_match:
+        # Extract numbers
+        nums_str = nums_match.group(1)
+        nums = [int(x.strip()) for x in nums_str.split(',') if x.strip()]
+        target = int(target_match.group(1))
+        return [nums, target]
     
-    args_to_pass = []
-    local_vars = locals()
-    expected_args = {json.dumps(args)}
-    
-    for arg in expected_args:
-        if arg in local_vars:
-            args_to_pass.append(local_vars[arg])
+    # Try JSON parsing
+    try:
+        parsed = json.loads(input_str)
+        if isinstance(parsed, dict):
+            if 'nums' in parsed and 'target' in parsed:
+                return [parsed['nums'], parsed['target']]
+            # Set variables from input dict
+            args = []
+            func_def = next((node for node in ast.parse(code).body if isinstance(node, ast.FunctionDef)), None)
+            if func_def:
+                for arg_name in [arg.arg for arg in func_def.args.args]:
+                    if arg_name in parsed:
+                        args.append(parsed[arg_name])
+            return args if args else [parsed]
+        elif isinstance(parsed, list):
+            return parsed
         else:
-            # Try to find a variable that looks like the arg?
-            # Or just fail?
-            pass
-            
-    if len(args_to_pass) != len(expected_args):
-        # Fallback: if input_data set 'nums' and 'target', and args are 'nums', 'target', we are good.
-        # If input_data set 's', and arg is 's', we are good.
+            return [parsed]
+    except:
         pass
-
-    result = {func_name}(*args_to_pass)
     
-    # Heuristic for in-place modifications (e.g. Reverse String)
-    if result is None and len(args_to_pass) > 0 and isinstance(args_to_pass[0], list):
-        print("###RESULT###")
-        print(json.dumps(args_to_pass[0]))
-    else:
-        print("###RESULT###")
+    # Fallback: treat as raw input
+    return [input_data]
+
+# Parse the input
+args = parse_input(input_data)
+
+# Call the solution function
+try:
+    result = {func_name}(*args)
+    # Print result in expected format
+    if isinstance(result, (list, dict)):
         print(json.dumps(result))
+    else:
+        print(result)
 except Exception as e:
-    print("###ERROR###")
-    print(str(e))
-"""
-    full_code = code + "\n" + footer
+    print(f"Error: {{str(e)}}", file=sys.stderr)
+    sys.exit(1)
+'''
+
+    # Combine user code with test harness
+    full_code = code + "\n" + test_harness
 
     # Write to temp file
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
@@ -118,25 +151,68 @@ except Exception as e:
         temp_path = f.name
 
     try:
-        # Run
+        # Run with input data
         result = subprocess.run(
-            [sys.executable, temp_path], capture_output=True, text=True, timeout=5
+            [sys.executable, temp_path], 
+            input=input_data, 
+            capture_output=True, 
+            text=True, 
+            timeout=10  # CodeChef typically has 1-2 second limits
         )
-        output = result.stdout
-
-        if "###ERROR###" in output:
-            error_msg = output.split("###ERROR###")[1].strip()
-            return {"output": "", "error": error_msg}
-
-        if "###RESULT###" in output:
-            actual_output = output.split("###RESULT###")[1].strip()
-            return {"output": actual_output, "error": None}
-
+        
         if result.stderr:
-            return {"output": "", "error": result.stderr}
+            return {"output": "", "error": result.stderr.strip()}
+            
+        output = result.stdout.strip()
+        if not output:
+            return {"output": "", "error": "No output produced"}
+            
+        return {"output": output, "error": None}
+        
+    except subprocess.TimeoutExpired:
+        return {"output": "", "error": "Time Limit Exceeded"}
+    except Exception as e:
+        return {"output": "", "error": str(e)}
+    finally:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
 
-        return {"output": output.strip(), "error": "No output returned"}
 
+def execute_python_script(code: str, input_data: str):
+    # For script-style code (no function definition)
+    test_harness = f'''
+import sys
+import json
+
+# Inject input as stdin simulation
+input_data = """{input_data}"""
+
+# Replace sys.stdin read with our input
+import io
+sys.stdin = io.StringIO(input_data)
+
+# Execute user code
+{code}
+'''
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
+        f.write(test_harness)
+        temp_path = f.name
+
+    try:
+        result = subprocess.run(
+            [sys.executable, temp_path], 
+            capture_output=True, 
+            text=True, 
+            timeout=10
+        )
+        
+        if result.stderr:
+            return {"output": "", "error": result.stderr.strip()}
+            
+        output = result.stdout.strip()
+        return {"output": output, "error": None}
+        
     except subprocess.TimeoutExpired:
         return {"output": "", "error": "Time Limit Exceeded"}
     except Exception as e:
@@ -156,75 +232,65 @@ async def submit_code(
     if not problem:
         raise HTTPException(status_code=404, detail="Problem not found")
 
-    # Execution Logic
+    # CodeChef style execution against all test cases
+    test_cases = problem.hidden_test_cases
+    if not test_cases:
+        test_cases = problem.sample_test_cases
+
+    test_case_results = []
     all_passed = True
     failure_details = {}
     actual_output = None
     expected_output = None
 
-    test_cases = problem.hidden_test_cases
-    if not test_cases:
-        test_cases = problem.sample_test_cases
-
-    for case in test_cases:
+    for idx, case in enumerate(test_cases):
         input_val = case.get("input", "")
         expected_output = case.get("output", "").strip()
 
-        # Mock execution
-        # If the user code is exactly "solution", we pass it for demo purposes.
+        # Execute code for each test case
+        start_time = time.time()
+        
+        # Special case for demo
         if submission.code.strip() == "solution":
             actual_output = expected_output
+            execution_time = 0.1
+            test_passed = True
         else:
             result = await execute_code(submission.code, submission.language, input_val)
+            execution_time = time.time() - start_time
+            
             if result["error"]:
-                all_passed = False
+                test_passed = False
+                actual_output = result["error"]
                 failure_details = {
                     "actual_output": result["error"],
                     "expected_output": expected_output,
-                    "message": f"Error at input: {input_val}",
+                    "message": f"Error at test case {idx + 1}: {input_val}",
                 }
-                break
+                all_passed = False
+            else:
+                actual_output = result["output"].strip()
+                test_passed = normalize_output_comparison(actual_output, expected_output)
+                
+                if not test_passed:
+                    failure_details = {
+                        "actual_output": actual_output,
+                        "expected_output": expected_output,
+                        "message": f"Wrong answer at test case {idx + 1}",
+                    }
+                    all_passed = False
 
-            actual_output = result["output"].strip()
+        # Store individual test case result
+        test_case_results.append({
+            "input": input_val,
+            "expected_output": expected_output,
+            "actual_output": actual_output,
+            "passed": test_passed,
+            "execution_time": round(execution_time * 1000, 2)  # Convert to ms
+        })
 
-        # Normalize for comparison (handle JSON spacing differences and quote types)
-        import ast
-        import json
-
-        # Parse Actual Output
-        try:
-            actual_obj = json.loads(actual_output)
-        except:
-            try:
-                actual_obj = ast.literal_eval(actual_output)
-            except:
-                actual_obj = actual_output.strip()
-
-        # Parse Expected Output
-        try:
-            expected_obj = json.loads(expected_output)
-        except:
-            try:
-                expected_obj = ast.literal_eval(expected_output)
-            except:
-                expected_obj = expected_output.strip()
-
-        # Compare
-        try:
-            is_match = actual_obj == expected_obj
-        except:
-            # Fallback to normalized string comparison if objects are not comparable
-            is_match = str(actual_output).replace(" ", "").replace("'", '"') == str(
-                expected_output
-            ).replace(" ", "").replace("'", '"')
-
-        if not is_match:
-            all_passed = False
-            failure_details = {
-                "actual_output": actual_output,
-                "expected_output": expected_output,
-                "message": f"Failed at input: {input_val}",
-            }
+        # If any test failed, we can stop early for Wrong Answer
+        if not test_passed:
             break
 
     status = "Accepted" if all_passed else "Wrong Answer"
@@ -262,14 +328,45 @@ async def submit_code(
         execution_time=0,
     )
 
+    # --- Log performance for ML recommendation engine ---
+    attempt_count = (
+        db.query(models.Submission)
+        .filter(
+            models.Submission.user_id == current_user.id,
+            models.Submission.problem_id == submission.problem_id,
+        )
+        .count()
+    )
+    perf_log = models.UserPerformanceLog(
+        user_id=current_user.id,
+        problem_id=problem.id,
+        problem_type="coding",
+        tags=list(problem.tags) if problem.tags else [],
+        difficulty=problem.difficulty,
+        status=status,
+        attempt_number=attempt_count,
+        time_spent_seconds=getattr(submission, "time_spent_seconds", None),
+    )
+    db.add(perf_log)
+    db.commit()
+
     response = schemas.Submission.from_orm(db_submission)
+    
+    # Add test case results to response
+    response.test_case_results = test_case_results
+    response.test_cases_passed = sum(1 for tc in test_case_results if tc["passed"])
+    response.total_test_cases = len(test_case_results)
+    
     if not all_passed:
         response.actual_output = failure_details.get("actual_output")
         response.expected_output = failure_details.get("expected_output")
         response.message = failure_details.get("message")
-    elif actual_output is not None:
-        response.actual_output = actual_output
-        response.expected_output = expected_output
+    else:
+        # Use the last successful output
+        if test_case_results:
+            last_successful = test_case_results[-1]
+            response.actual_output = last_successful["actual_output"]
+            response.expected_output = last_successful["expected_output"]
         response.message = "All test cases passed!"
 
     return response

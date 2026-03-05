@@ -23,6 +23,8 @@ class User(Base):
     submissions = relationship("Submission", back_populates="user")
     sql_submissions = relationship("SQLSubmission", back_populates="user")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    performance_logs = relationship("UserPerformanceLog", back_populates="user", cascade="all, delete-orphan")
+
 
 
 class RefreshToken(Base):
@@ -159,3 +161,20 @@ class AptitudeProblem(Base):
     time_limit = Column(Integer, default=60)  # seconds
 
     chapter = relationship("AptitudeChapter", back_populates="problems")
+
+
+class UserPerformanceLog(Base):
+    __tablename__ = "user_performance_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    problem_id = Column(Integer)          # Generic ID (coding/sql/aptitude)
+    problem_type = Column(String)         # "coding", "sql", "aptitude"
+    tags = Column(JSON, default=[])       # Snapshot of problem tags at submission time
+    difficulty = Column(String)           # Easy / Medium / Hard
+    status = Column(String)              # Accepted, Wrong Answer, TLE, Compilation Error, Correct, Incorrect
+    attempt_number = Column(Integer, default=1)  # Which attempt (1st, 2nd, 3rd...)
+    time_spent_seconds = Column(Integer, nullable=True)  # Time from page load to submission
+    submitted_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    user = relationship("User", back_populates="performance_logs")

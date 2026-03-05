@@ -322,3 +322,37 @@ async def read_users_me(
         db.refresh(current_user)
 
     return current_user
+
+
+# ─────────────────────────────────────────────
+# GET /auth/solved-problems
+# ─────────────────────────────────────────────
+@router.get("/solved-problems")
+def get_solved_problems(
+    current_user: models.User = Depends(dependencies.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Get list of problems solved by the current user"""
+    # Get unique solved problem IDs
+    solved_submissions = (
+        db.query(models.Submission.problem_id, models.Problem)
+        .join(models.Problem, models.Submission.problem_id == models.Problem.id)
+        .filter(
+            models.Submission.user_id == current_user.id,
+            models.Submission.status == "Accepted"
+        )
+        .distinct()
+        .all()
+    )
+    
+    solved_problems = []
+    for problem_id, problem in solved_submissions:
+        solved_problems.append({
+            "id": problem.id,
+            "title": problem.title,
+            "difficulty": problem.difficulty,
+            "tags": problem.tags or [],
+            "companies": problem.companies or []
+        })
+    
+    return solved_problems

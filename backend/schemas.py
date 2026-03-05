@@ -103,6 +103,9 @@ class Submission(SubmissionBase):
     message: Optional[str] = None
     actual_output: Optional[str] = None
     expected_output: Optional[str] = None
+    test_case_results: Optional[List[Dict[str, Any]]] = []
+    test_cases_passed: Optional[int] = 0
+    total_test_cases: Optional[int] = 0
 
     class Config:
         from_attributes = True

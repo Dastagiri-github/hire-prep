@@ -11,6 +11,15 @@ router = APIRouter(
 )
 
 
+@router.get("/user")
+def get_current_user_stats(
+    current_user: models.User = Depends(dependencies.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Get stats for the current authenticated user"""
+    return get_user_stats(current_user.id, db, current_user)
+
+
 @router.get("/user/{user_id}")
 def get_user_stats(
     user_id: int,

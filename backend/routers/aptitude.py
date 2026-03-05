@@ -116,7 +116,32 @@ def evaluate_aptitude_answer(
         user_answer=request.selected_answer,
     )
 
+    # --- Log performance for ML recommendation engine ---
+    if current_user:
+        attempt_count = (
+            db.query(models.UserPerformanceLog)
+            .filter(
+                models.UserPerformanceLog.user_id == current_user.id,
+                models.UserPerformanceLog.problem_id == problem.id,
+                models.UserPerformanceLog.problem_type == "aptitude",
+            )
+            .count()
+        ) + 1
+        chapter_tag = problem.chapter.title if problem.chapter else "Aptitude"
+        perf_log = models.UserPerformanceLog(
+            user_id=current_user.id,
+            problem_id=problem.id,
+            problem_type="aptitude",
+            tags=[chapter_tag],
+            difficulty=problem.difficulty,
+            status="Correct" if is_correct else "Incorrect",
+            attempt_number=attempt_count,
+        )
+        db.add(perf_log)
+        db.commit()
+
     return result
+
 
 
 @router.get("/problems", response_model=List[schemas.AptitudeProblem])
