@@ -46,15 +46,10 @@ export default function AuthGuard({ children, requireAuth = true, redirectTo = "
     checkAuth();
   }, [requireAuth, redirectTo, router]);
 
+  // Render children immediately to allow pages to show their own custom skeletons
+  // The AuthGuard will invisibly redirect in the background if auth fails.
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-900 via-[#0a0f1e] to-black">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400 text-sm">Loading...</p>
-        </div>
-      </div>
-    );
+    return <>{children}</>;
   }
 
   if (!isAuthenticated && requireAuth) {
