@@ -22,6 +22,8 @@ class User(UserBase):
     reset_password: int = 1
     target_companies: List[str]
     stats: Dict[str, Any]
+    reputation: int = 0
+    last_active_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:
@@ -135,6 +137,69 @@ class ChangePasswordRequest(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     credential: str
+
+
+# Metrics & Stats Schemas
+class HeatmapData(BaseModel):
+    date: str
+    count: int
+
+class RadarData(BaseModel):
+    subject: str
+    A: int
+    fullMark: int
+
+class RecentSubmission(BaseModel):
+    id: int
+    problem_id: int
+    title: str
+    difficulty: str
+    problem_type: str  # coding, sql, aptitude
+    status: str
+    time_spent_seconds: Optional[int]
+    submitted_at: datetime
+
+class Badge(BaseModel):
+    id: int
+    badge_name: str
+    earned_at: datetime
+
+class UserComprehensiveStats(BaseModel):
+    total_solved: int
+    total_time_spent_seconds: int
+    current_streak: int
+    longest_streak: int
+    reputation: int
+    global_percentile: float
+    difficulty_breakdown: Dict[str, int]
+    topic_radar: List[RadarData]
+    activity_graph: List[HeatmapData]
+    recent_submissions: List[RecentSubmission]
+    badges: List[Badge]
+
+class LeaderboardUser(BaseModel):
+    id: int
+    name: str
+    username: str
+    reputation: int
+    total_solved: int
+
+class DailyChallengeBase(BaseModel):
+    date: date
+    problem_id: int
+    problem_type: str
+
+class DailyChallengeCreate(DailyChallengeBase):
+    pass
+
+class DailyChallengeResponse(DailyChallengeBase):
+    title: str
+    difficulty: str
+    description: str
+
+class DailyChallengeStatus(BaseModel):
+    solved: bool
+    status: Optional[str]
 
 
 # SQL Schemas

@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Code2, LayoutDashboard, UserPlus, Trophy, LogOut, Database, Menu, X, Brain } from 'lucide-react';
+import { Code2, LayoutDashboard, UserPlus, Trophy, LogOut, Database, Menu, X, Brain, Medal } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import api from '@/lib/api';
 
@@ -103,6 +103,13 @@ const Navbar = () => {
             Battleground
           </Link>
           <Link
+            href="/leaderboard"
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${isActive('/leaderboard')}`}
+          >
+            <Medal className="w-4 h-4" />
+            Leaderboard
+          </Link>
+          <Link
             href="/sql"
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${isActive('/sql')}`}
           >
@@ -167,6 +174,9 @@ const Navbar = () => {
               </Link>
               <Link href="/companies" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isActive('/companies')}`}>
                 <Trophy className="w-4 h-4" /> Battleground
+              </Link>
+              <Link href="/leaderboard" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isActive('/leaderboard')}`}>
+                <Medal className="w-4 h-4" /> Leaderboard
               </Link>
               <Link href="/sql" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isActive('/sql')}`}>
                 <Database className="w-4 h-4" /> SQL

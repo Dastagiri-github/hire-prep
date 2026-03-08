@@ -18,6 +18,8 @@ class User(Base):
     reset_password = Column(Integer, default=1) # 1 = must change, 0 = normal
     target_companies = Column(JSON, default=[])
     stats = Column(JSON, default={})
+    reputation = Column(Integer, default=0)     # Score for leaderboard
+    last_active_at = Column(DateTime, nullable=True) # Tracks online status
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     submissions = relationship("Submission", back_populates="user")
@@ -178,3 +180,37 @@ class UserPerformanceLog(Base):
     submitted_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", back_populates="performance_logs")
+
+
+class UserDailyActivity(Base):
+    __tablename__ = "user_daily_activity"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    date = Column(Date, index=True)
+    time_spent_seconds = Column(Integer, default=0)
+
+    user = relationship("User")
+
+
+class UserBadge(Base):
+    __tablename__ = "user_badges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    badge_name = Column(String)
+    earned_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    user = relationship("User")
+
+
+class DailyChallenge(Base):
+    __tablename__ = "daily_challenges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, unique=True, index=True)  # The date this problem is featured
+    problem_id = Column(Integer)
+    problem_type = Column(String)  # "coding", "sql", or "aptitude"
+    assigned_by_id = Column(Integer, ForeignKey("employees.id"))
+
+    assigned_by = relationship("Employee")

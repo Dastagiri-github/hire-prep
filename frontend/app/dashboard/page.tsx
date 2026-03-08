@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Search, Filter, ArrowRight, Target, Trophy, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Filter, ArrowRight, Target, Trophy, BookOpen, Clock, Flame, Shield, Calendar as CalendarIcon, Star } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
+import { ActivityCalendar } from 'react-activity-calendar';
 
 interface Problem {
   id: number;
@@ -13,10 +14,60 @@ interface Problem {
   tags: string[];
 }
 
+interface HeatmapData {
+  date: string;
+  count: number;
+  level?: number;
+}
+
+interface RadarData {
+  subject: string;
+  A: number;
+  fullMark: number;
+}
+
+interface RecentSubmission {
+  id: number;
+  problem_id: number;
+  title: string;
+  difficulty: string;
+  problem_type: string;
+  status: string;
+  time_spent_seconds: number;
+  submitted_at: string;
+}
+
+interface Badge {
+  id: number;
+  badge_name: string;
+  earned_at: string;
+}
+
 interface UserStats {
-  topic_radar: { subject: string; A: number; fullMark: number }[];
-  activity_graph: { date: string; count: number }[];
   total_solved: number;
+  total_time_spent_seconds: number;
+  current_streak: number;
+  longest_streak: number;
+  reputation: number;
+  global_percentile: number;
+  difficulty_breakdown: {
+    Easy: number;
+    Medium: number;
+    Hard: number;
+  };
+  topic_radar: RadarData[];
+  activity_graph: HeatmapData[];
+  recent_submissions: RecentSubmission[];
+  badges: Badge[];
+}
+
+interface DailyChallenge {
+  date: string;
+  problem_id: number;
+  problem_type: string;
+  title: string;
+  difficulty: string;
+  description: string;
 }
 
 export default function Dashboard() {
@@ -25,6 +76,8 @@ export default function Dashboard() {
   const [recommendedProblems, setRecommendedProblems] = useState<Problem[]>([]);
   const [solvedProblems, setSolvedProblems] = useState<Problem[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
+  const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | null>(null);
+  const [dailySolved, setDailySolved] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string>('All');
   const [selectedTopic, setSelectedTopic] = useState<string>('All');
   const [isCompanyExpanded, setIsCompanyExpanded] = useState(false);
@@ -33,7 +86,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'recommended' | 'solved' | 'all'>('recommended');
-  const itemsPerPage = 5;
+  const itemsPerPage = 6;
 
   useEffect(() => {
     // Get user ID from localStorage or from token
@@ -41,7 +94,6 @@ export default function Dashboard() {
       const token = localStorage.getItem('access_token');
       if (token) {
         try {
-          // Simple JWT decode to get user ID (in production, use proper JWT library)
           const payload = JSON.parse(atob(token.split('.')[1]));
           return payload.sub || payload.user_id;
         } catch (e) {
@@ -56,25 +108,49 @@ export default function Dashboard() {
 
     const fetchData = async () => {
       if (!currentUserId) return;
-      
+
       try {
-        // Fetch all problems
-        const probsRes = await api.get('/problems/');
+        // Parallel fetching for performance
+        const [probsRes, recRes, statsRes, solvedRes] = await Promise.all([
+          api.get('/problems/'),
+          api.get('/recommendations/'),
+          api.get('/stats/user'),
+          api.get('/auth/solved-problems')
+        ]);
+
         setAllProblems(probsRes.data);
         setProblems(probsRes.data);
-        
-        // Fetch recommended problems
-        const recRes = await api.get('/recommendations/');
         setRecommendedProblems(recRes.data.problems || []);
-        
-        // Fetch user stats
-        const statsRes = await api.get('/stats/user');
+
+        // Format activity graph data for react-activity-calendar
+        if (statsRes.data && statsRes.data.activity_graph) {
+          const formattedGraph = statsRes.data.activity_graph.map((d: any) => {
+            let level = 0;
+            if (d.count > 0 && d.count <= 2) level = 1;
+            else if (d.count > 2 && d.count <= 5) level = 2;
+            else if (d.count > 5 && d.count <= 8) level = 3;
+            else if (d.count > 8) level = 4;
+            return { ...d, level };
+          }).filter((d: any) => d.date); // Must have valid date
+
+          statsRes.data.activity_graph = formattedGraph.length > 0 ? formattedGraph : [{ date: new Date().toISOString().split('T')[0], count: 0, level: 0 }];
+        }
+
         setStats(statsRes.data);
-        
-        // Fetch solved problems
-        const solvedRes = await api.get('/auth/solved-problems');
         setSolvedProblems(solvedRes.data);
-        
+
+        // Fetch Daily Challenge
+        try {
+          const [dailyRes, statusRes] = await Promise.all([
+            api.get('/problems/daily'),
+            api.get('/problems/daily/status')
+          ]);
+          setDailyChallenge(dailyRes.data);
+          setDailySolved(statusRes.data.solved);
+        } catch (e) {
+          console.log("No daily challenge assigned today");
+        }
+
       } catch (error) {
         console.error('Failed to fetch data', error);
       } finally {
@@ -102,19 +178,29 @@ export default function Dashboard() {
   };
 
   const filteredProblems = () => {
-    let filtered = viewMode === 'recommended' ? recommendedProblems : 
-                   viewMode === 'solved' ? solvedProblems : 
-                   allProblems;
-    
+    let filtered = viewMode === 'recommended' ? recommendedProblems :
+      viewMode === 'solved' ? solvedProblems :
+        allProblems;
+
     if (selectedCompany !== 'All') {
       filtered = filtered.filter(p => p.companies?.includes(selectedCompany));
     }
-    
+
     if (selectedTopic !== 'All') {
       filtered = filtered.filter(p => p.tags?.includes(selectedTopic));
     }
-    
+
     return filtered;
+  };
+
+  const formatTime = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins < 60) return `${mins}m ${secs}s`;
+    const hours = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    return `${hours}h ${remMins}m`;
   };
 
   const totalPages = Math.ceil(filteredProblems().length / itemsPerPage);
@@ -124,263 +210,332 @@ export default function Dashboard() {
   );
 
   if (isLoading) {
-  return (
-    <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
-            <p className="text-gray-400">Loading your personalized learning experience...</p>
-          </div>
+    return (
+      <AuthGuard>
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 p-6 flex items-center justify-center">
           <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+            <p className="text-gray-400">Loading your personalized dashboard...</p>
           </div>
         </div>
-      </div>
-    </AuthGuard>
-  );
-}
+      </AuthGuard>
+    );
+  }
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
-            <p className="text-gray-400">Your personalized interview preparation hub</p>
-          </div>
+      <div className="min-h-screen bg-[#0a0f1c] p-4 md:p-8 pt-24">
+        <div className="max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-4 gap-8">
 
-          {/* View Mode Selector */}
-          <div className="flex justify-center mb-8">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-1 flex">
-              <button
-                onClick={() => setViewMode('recommended')}
-                className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                  viewMode === 'recommended' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <Target className="w-4 h-4 inline mr-2" />
-                Recommended
-              </button>
-              <button
-                onClick={() => setViewMode('solved')}
-                className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                  viewMode === 'solved' 
-                    ? 'bg-green-600 text-white' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <Trophy className="w-4 h-4 inline mr-2" />
-                Solved
-              </button>
-              <button
-                onClick={() => setViewMode('all')}
-                className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                  viewMode === 'all' 
-                    ? 'bg-purple-600 text-white' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <BookOpen className="w-4 h-4 inline mr-2" />
-                All Problems
-              </button>
-            </div>
-          </div>
+          {/* LEFT SIDEBAR: PROFILE & METRICS (1/4 width on desktop) */}
+          <div className="xl:col-span-1 space-y-6">
 
-          {/* Filters */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 mb-8">
-            <div className="flex flex-wrap gap-4 justify-center">
-              {/* Company Filter */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsCompanyExpanded(!isCompanyExpanded)}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all"
-                >
-                  <Filter className="w-4 h-4" />
-                  {selectedCompany === 'All' ? 'All Companies' : selectedCompany}
-                  <ChevronDown className={`w-4 h-4 transition-transform ${isCompanyExpanded ? 'rotate-180' : ''}`} />
-                </button>
-                {isCompanyExpanded && (
-                  <div className="absolute top-full left-0 mt-2 w-48 bg-gray-800 border border-white/20 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
-                    {getUniqueCompanies().map(company => (
-                      <button
-                        key={company}
-                        onClick={() => {
-                          setSelectedCompany(company);
-                          setIsCompanyExpanded(false);
-                          setCurrentPage(1);
-                        }}
-                        className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors ${
-                          selectedCompany === company ? 'bg-blue-600 text-white' : 'text-gray-300'
-                        }`}
-                      >
-                        {company}
-                      </button>
-                    ))}
-                  </div>
-                )}
+            {/* Profile Card */}
+            <div className="bg-[#111827] rounded-2xl border border-gray-800 p-6 shadow-lg relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Target className="w-24 h-24" />
+              </div>
+              <div className="flex items-center gap-4 mb-6 relative z-10">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                  {stats?.total_solved || 0}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Your Rank</h2>
+                  <p className="text-blue-400 font-medium">Top {stats?.global_percentile || 100}%</p>
+                </div>
               </div>
 
-              {/* Topic Filter */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsTopicExpanded(!isTopicExpanded)}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-medium transition-all"
-                >
-                  <Filter className="w-4 h-4" />
-                  {selectedTopic === 'All' ? 'All Topics' : selectedTopic}
-                  <ChevronDown className={`w-4 h-4 transition-transform ${isTopicExpanded ? 'rotate-180' : ''}`} />
-                </button>
-                {isTopicExpanded && (
-                  <div className="absolute top-full left-0 mt-2 w-48 bg-gray-800 border border-white/20 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto">
-                    {getUniqueTopics().map(topic => (
-                      <button
-                        key={topic}
-                        onClick={() => {
-                          setSelectedTopic(topic);
-                          setIsTopicExpanded(false);
-                          setCurrentPage(1);
-                        }}
-                        className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors ${
-                          selectedTopic === topic ? 'bg-blue-600 text-white' : 'text-gray-300'
-                        }`}
-                      >
-                        {topic}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Results Count */}
-              <div className="px-4 py-2 bg-white/10 border border-white/20 rounded-xl">
-                <span className="text-white font-medium">
-                  {filteredProblems().length} {viewMode === 'recommended' ? 'Recommended' : viewMode === 'solved' ? 'Solved' : 'Problems'}
-                </span>
+              <div className="space-y-4 relative z-10 text-sm">
+                <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
+                  <span className="text-gray-400 flex items-center gap-2"><Trophy className="w-4 h-4 text-yellow-500" /> Reputation</span>
+                  <span className="text-white font-bold">{stats?.reputation || 0}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
+                  <span className="text-gray-400 flex items-center gap-2"><Clock className="w-4 h-4 text-blue-400" /> Time Spent</span>
+                  <span className="text-white font-bold">{formatTime(stats?.total_time_spent_seconds || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-gray-800/50">
+                  <span className="text-gray-400 flex items-center gap-2"><Flame className="w-4 h-4 text-orange-500" /> Current Streak</span>
+                  <span className="text-white font-bold">{stats?.current_streak || 0} Days</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-gray-400 flex items-center gap-2"><Star className="w-4 h-4 text-yellow-500" /> Max Streak</span>
+                  <span className="text-white font-bold">{stats?.longest_streak || 0} Days</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Problems Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {paginatedProblems.map((problem) => (
-              <Link
-                key={problem.id}
-                href={`/problem/${problem.id}`}
-                className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 hover:border-white/40 transition-all duration-300 hover:scale-105 group"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">
-                    {problem.title}
-                  </h3>
-                  <span className={`px-2 py-1 rounded-lg text-xs font-bold ${
-                    problem.difficulty === 'Easy' ? 'bg-green-500/20 text-green-400' :
-                    problem.difficulty === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-red-500/20 text-red-400'
-                  }`}>
-                    {problem.difficulty}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {problem.tags?.slice(0, 3).map(tag => (
-                    <span key={tag} className="px-2 py-1 bg-blue-500/10 text-blue-300 text-xs rounded-lg border border-blue-500/20">
-                      {tag}
-                    </span>
-                  ))}
-                  {problem.tags && problem.tags.length > 3 && (
-                    <span className="px-2 py-1 bg-gray-500/10 text-gray-400 text-xs rounded-lg">
-                      +{problem.tags.length - 3}
-                    </span>
-                  )}
-                </div>
-                {problem.companies && problem.companies.length > 0 && (
-                  <div className="text-xs text-gray-400">
-                    Asked at: {problem.companies.slice(0, 2).join(', ')}
-                    {problem.companies.length > 2 && '...'}
+            {/* Difficulty Breakdown */}
+            <div className="bg-[#111827] rounded-2xl border border-gray-800 p-6 shadow-lg">
+              <h3 className="text-gray-400 font-medium text-sm mb-4">Difficulty Breakdown</h3>
+              <div className="space-y-4">
+                {/* Easy */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-white">Easy</span>
+                    <span className="text-white font-mono">{stats?.difficulty_breakdown?.Easy || 0}</span>
                   </div>
-                )}
-                <div className="flex justify-between items-center">
-                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-400 transition-colors" />
-                  <span className="text-xs text-gray-500">
-                    {viewMode === 'solved' ? 'Solved' : viewMode === 'recommended' ? 'Recommended' : 'Practice'}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <span className="text-white font-medium">
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="p-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-
-          {/* Stats Section */}
-          {stats && (
-            <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6">
-                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <Target className="w-5 h-5 text-blue-400" />
-                  Your Progress
-                </h2>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Total Problems Solved</span>
-                    <span className="text-2xl font-bold text-green-400">{stats.total_solved}</span>
+                  <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#10b981]" style={{ width: `${Math.min(100, ((stats?.difficulty_breakdown?.Easy || 0) / Math.max(1, stats?.total_solved || 1)) * 100)}%` }}></div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Success Rate</span>
-                    <span className="text-2xl font-bold text-blue-400">
-                      {stats.total_solved > 0 ? Math.round((stats.total_solved / (stats.total_solved + 10)) * 100) : 0}%
-                    </span>
+                </div>
+                {/* Medium */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-white">Medium</span>
+                    <span className="text-white font-mono">{stats?.difficulty_breakdown?.Medium || 0}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#eab308]" style={{ width: `${Math.min(100, ((stats?.difficulty_breakdown?.Medium || 0) / Math.max(1, stats?.total_solved || 1)) * 100)}%` }}></div>
+                  </div>
+                </div>
+                {/* Hard */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-white">Hard</span>
+                    <span className="text-white font-mono">{stats?.difficulty_breakdown?.Hard || 0}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#ef4444]" style={{ width: `${Math.min(100, ((stats?.difficulty_breakdown?.Hard || 0) / Math.max(1, stats?.total_solved || 1)) * 100)}%` }}></div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6">
-                <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-purple-400" />
-                  Topic Performance
-                </h2>
-                <div className="space-y-3">
-                  {stats.topic_radar.map((topic, index) => (
-                    <div key={topic.subject} className="flex justify-between items-center">
-                      <span className="text-gray-300">{topic.subject}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-700 rounded-full h-2">
-                          <div 
-                            className="h-2 rounded-full bg-blue-400"
-                            style={{ width: `${(topic.A / topic.fullMark) * 100}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-blue-400 text-sm">{Math.round((topic.A / topic.fullMark) * 100)}%</span>
-                      </div>
+            {/* Badges (If any) */}
+            {stats?.badges && stats.badges.length > 0 && (
+              <div className="bg-[#111827] rounded-2xl border border-gray-800 p-6 shadow-lg">
+                <h3 className="text-gray-400 font-medium text-sm mb-4">Badges</h3>
+                <div className="flex flex-wrap gap-2">
+                  {stats.badges.map(b => (
+                    <div key={b.id} className="p-2 bg-gradient-to-b from-yellow-500/10 to-transparent border border-yellow-500/20 rounded-xl text-center">
+                      <Shield className="w-8 h-8 text-yellow-500 mx-auto mb-1" />
+                      <span className="text-xs text-yellow-500 font-medium">{b.badge_name}</span>
                     </div>
                   ))}
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* MAIN CONTENT AREA */}
+          <div className="xl:col-span-3 space-y-6">
+
+            {/* PROBLEM OF THE DAY BANNER */}
+            {dailyChallenge && (
+              <div className="relative overflow-hidden rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-900/40 via-purple-900/30 to-[#111827] p-6 shadow-[0_0_30px_rgba(59,130,246,0.1)]">
+                <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500 blur-[80px] opacity-20"></div>
+
+                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                        Problem Of The Day
+                      </span>
+                      {dailySolved && (
+                        <span className="bg-green-500/20 text-green-400 border border-green-500/30 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-400"></div> Solved
+                        </span>
+                      )}
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">{dailyChallenge.title}</h2>
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className={`font-medium ${dailyChallenge.difficulty === 'Easy' ? 'text-green-400' :
+                        dailyChallenge.difficulty === 'Medium' ? 'text-yellow-400' : 'text-red-400'
+                        }`}>{dailyChallenge.difficulty}</span>
+                      <span className="text-gray-500">•</span>
+                      <span className="text-gray-400 capitalize">{dailyChallenge.problem_type}</span>
+                    </div>
+                  </div>
+
+                  <Link
+                    href={`/${dailyChallenge.problem_type === 'coding' ? 'problem' : dailyChallenge.problem_type === 'sql' ? 'sql' : 'aptitude'}/${dailyChallenge.problem_id}`}
+                    className={`px-8 py-3 rounded-xl font-bold transition-all whitespace-nowrap ${dailySolved
+                      ? 'bg-gray-800 text-white hover:bg-gray-700 border border-gray-700'
+                      : 'bg-white text-black hover:bg-gray-200 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-105'
+                      }`}
+                  >
+                    {dailySolved ? 'Review Solution' : 'Solve Challenge'}
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* HEATMAP / CONTINUOUS GRAPH */}
+            <div className="bg-[#111827] rounded-2xl border border-gray-800 p-6 shadow-lg overflow-x-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-white font-medium flex items-center gap-2">
+                  <CalendarIcon className="w-5 h-5 text-gray-400" />
+                  Submission Activity
+                </h3>
+                <span className="text-sm text-gray-400">{stats?.total_solved} submissions in the past year</span>
+              </div>
+              <div className="min-w-[700px] flex justify-center">
+                {stats && stats.activity_graph && stats.activity_graph.length > 0 && (
+                  <ActivityCalendar
+                    data={stats.activity_graph as any}
+                    theme={{
+                      light: ['#1f2937', '#0e4429', '#006d32', '#26a641', '#39d353'],
+                      dark: ['#1f2937', '#0e4429', '#006d32', '#26a641', '#39d353'],
+                    }}
+                    showMonthLabels={false}
+                    labels={{
+                      legend: {
+                        less: 'Less',
+                        more: 'More'
+                      },
+                      months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                      weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                      totalCount: '{{count}} submissions in {{year}}',
+                    }}
+                  />
+                )}
+              </div>
             </div>
-          )}
+
+            {/* TABS & FILTERS */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gray-800 pb-4">
+              <div className="flex bg-[#111827] p-1 rounded-xl border border-gray-800">
+                <button
+                  onClick={() => setViewMode('recommended')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'recommended' ? 'bg-[#1e293b] text-white shadow' : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                  Recommended
+                </button>
+                <button
+                  onClick={() => setViewMode('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'all' ? 'bg-[#1e293b] text-white shadow' : 'text-gray-400 hover:text-white'
+                    }`}
+                >
+                  All Problems
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <div className="relative group">
+                  <button onClick={() => setIsCompanyExpanded(!isCompanyExpanded)} className="flex items-center justify-between min-w-[140px] px-4 py-2 bg-[#111827] border border-gray-800 rounded-xl text-white text-sm hover:border-gray-600 transition-colors">
+                    {selectedCompany === 'All' ? 'Companies' : selectedCompany}
+                    <ChevronDown className="w-4 h-4 ml-2 text-gray-400" />
+                  </button>
+                  {isCompanyExpanded && (
+                    <div className="absolute right-0 mt-2 w-48 bg-[#111827] border border-gray-800 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto overflow-hidden">
+                      {getUniqueCompanies().map(company => (
+                        <button
+                          key={company}
+                          onClick={() => { setSelectedCompany(company); setIsCompanyExpanded(false); setCurrentPage(1); }}
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-[#1e293b] transition-colors ${selectedCompany === company ? 'text-blue-400 bg-blue-500/10' : 'text-gray-300'}`}
+                        >
+                          {company}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="relative group">
+                  <button onClick={() => setIsTopicExpanded(!isTopicExpanded)} className="flex items-center justify-between min-w-[120px] px-4 py-2 bg-[#111827] border border-gray-800 rounded-xl text-white text-sm hover:border-gray-600 transition-colors">
+                    {selectedTopic === 'All' ? 'Topics' : selectedTopic}
+                    <ChevronDown className="w-4 h-4 ml-2 text-gray-400" />
+                  </button>
+                  {isTopicExpanded && (
+                    <div className="absolute right-0 mt-2 w-48 bg-[#111827] border border-gray-800 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto w-max max-w-[300px]">
+                      {getUniqueTopics().map(topic => (
+                        <button
+                          key={topic}
+                          onClick={() => { setSelectedTopic(topic); setIsTopicExpanded(false); setCurrentPage(1); }}
+                          className={`w-full text-left px-4 py-2 text-sm hover:bg-[#1e293b] transition-colors ${selectedTopic === topic ? 'text-blue-400 bg-blue-500/10' : 'text-gray-300'} truncate`}
+                        >
+                          {topic}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* PROBLEMS LIST (Table Format) */}
+            <div className="bg-[#111827] rounded-2xl border border-gray-800 overflow-hidden shadow-lg">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-800 text-gray-400 text-sm">
+                    <th className="font-medium p-4 pl-6">Title</th>
+                    <th className="font-medium p-4 hidden md:table-cell">Acceptance</th>
+                    <th className="font-medium p-4">Difficulty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedProblems.map((problem, idx) => {
+                    const isSolved = solvedProblems.some(sp => sp.id === problem.id);
+                    return (
+                      <tr key={problem.id} className={`border-b border-gray-800/50 hover:bg-[#1e293b]/50 transition-colors ${idx % 2 === 0 ? 'bg-[#0a0f1c]/30' : ''}`}>
+                        <td className="p-4 pl-6 border-r border-transparent">
+                          <div className="flex items-center gap-3">
+                            {isSolved && <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>}
+                            <div className="flex-1">
+                              <Link href={`/problem/${problem.id}`} className="text-white font-medium hover:text-blue-400 transition-colors inline-block">
+                                {problem.id}. {problem.title}
+                              </Link>
+                              <div className="flex gap-2 mt-1 flex-wrap">
+                                {problem.tags && problem.tags.slice(0, 2).map(t => (
+                                  <span key={t} className="text-[10px] text-gray-400 bg-gray-800 px-2 py-0.5 rounded-full whitespace-nowrap">{t}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4 text-gray-400 text-sm hidden md:table-cell">
+                          <div className="w-16 h-1.5 bg-gray-800 rounded-full overflow-hidden mt-1">
+                            <div className="h-full bg-blue-500" style={{ width: `${Math.floor(Math.random() * (75 - 30) + 30)}%` }}></div>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <span className={`${problem.difficulty === 'Easy' ? 'text-[#10b981]' :
+                            problem.difficulty === 'Medium' ? 'text-[#eab308]' :
+                              'text-[#ef4444]'
+                            } text-sm font-medium`}>
+                            {problem.difficulty}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+              {filteredProblems().length === 0 && (
+                <div className="p-12 text-center text-gray-500">
+                  <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                  No problems found matching criteria
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-between items-center pt-4">
+                <span className="text-gray-500 text-sm">Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredProblems().length)} of {filteredProblems().length}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 bg-[#111827] hover:bg-gray-800 border border-gray-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 bg-[#111827] hover:bg-gray-800 border border-gray-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
+
         </div>
       </div>
     </AuthGuard>

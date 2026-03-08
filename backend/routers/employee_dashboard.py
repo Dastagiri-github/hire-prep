@@ -35,8 +35,94 @@ def get_metrics(db: Session = Depends(database.get_db)):
 
 
 # ==========================================
+# Daily Challenge Management
+# ==========================================
+
+@router.post("/daily-challenge", response_model=schemas.DailyChallengeResponse)
+def assign_daily_challenge(
+    challenge: schemas.DailyChallengeCreate, 
+    db: Session = Depends(database.get_db),
+    current_employee: models.Employee = Depends(get_current_employee)
+):
+    """Assign a problem of the day for a specific date"""
+    
+    # 1. Check if challenge already exists for this date
+    existing = db.query(models.DailyChallenge).filter(models.DailyChallenge.date == challenge.date).first()
+    
+    if existing:
+        existing.problem_id = challenge.problem_id
+        existing.problem_type = challenge.problem_type
+        existing.assigned_by_id = current_employee.id
+        db_challenge = existing
+    else:
+        db_challenge = models.DailyChallenge(
+            date=challenge.date,
+            problem_id=challenge.problem_id,
+            problem_type=challenge.problem_type,
+            assigned_by_id=current_employee.id
+        )
+        db.add(db_challenge)
+        
+    db.commit()
+    db.refresh(db_challenge)
+    
+    # Fetch title and difficulty for response
+    title = ""
+    difficulty = ""
+    description = ""
+    
+    if challenge.problem_type == "coding":
+        prob = db.query(models.Problem).filter(models.Problem.id == challenge.problem_id).first()
+        if prob:
+            title = prob.title
+            difficulty = prob.difficulty
+            description = prob.description
+    elif challenge.problem_type == "sql":
+        prob = db.query(models.SQLProblem).filter(models.SQLProblem.id == challenge.problem_id).first()
+        if prob:
+            title = prob.title
+            difficulty = prob.difficulty
+            description = prob.description
+    elif challenge.problem_type == "aptitude":
+        prob = db.query(models.AptitudeProblem).filter(models.AptitudeProblem.id == challenge.problem_id).first()
+        if prob:
+            title = prob.title
+            difficulty = prob.difficulty
+            description = prob.description
+
+    return {
+        "date": db_challenge.date,
+        "problem_id": db_challenge.problem_id,
+        "problem_type": db_challenge.problem_type,
+        "title": title,
+        "difficulty": difficulty,
+        "description": description
+    }
+
+
+# ==========================================
 # DSA Problems Management
 # ==========================================
+
+@router.get("/problems/random")
+def get_random_problem(problem_type: str = "coding", db: Session = Depends(database.get_db)):
+    """Fetch a random problem ID based on its type"""
+    
+    # Use standard SQLAlchemy func.random() which maps to RANDOM() in SQLite/PostgreSQL
+    # Adjust to func.rand() if using MySQL
+    if problem_type == "coding":
+        prob = db.query(models.Problem.id).order_by(func.random()).first()
+    elif problem_type == "sql":
+        prob = db.query(models.SQLProblem.id).order_by(func.random()).first()
+    elif problem_type == "aptitude":
+        prob = db.query(models.AptitudeProblem.id).order_by(func.random()).first()
+    else:
+        raise HTTPException(status_code=400, detail="Invalid problem type")
+        
+    if not prob:
+        raise HTTPException(status_code=404, detail="No problems found for this type")
+        
+    return {"problem_id": prob[0]}
 
 @router.post("/problems", response_model=schemas.Problem)
 def create_problem(problem: schemas.ProblemCreate, db: Session = Depends(database.get_db)):
