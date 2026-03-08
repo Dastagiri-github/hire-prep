@@ -150,6 +150,34 @@ rl.on('close', () => {
             setEditorTheme(e?.detail === 'light' ? 'vs' : 'vs-dark');
         };
         window.addEventListener('themechange', handler);
+        
+        // Prevent copy-paste keyboard shortcuts globally in the editor
+        const preventCopyPaste = (e: KeyboardEvent) => {
+            // Check if the event target is within the editor
+            const target = e.target as HTMLElement;
+            if (target.closest('.monaco-editor')) {
+                // Prevent copy, cut, paste, select all
+                if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 'a'].includes(e.key.toLowerCase())) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }
+        };
+        
+        // Prevent context menu on the editor
+        const preventContextMenu = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (target.closest('.monaco-editor')) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        };
+        
+        document.addEventListener('keydown', preventCopyPaste, true);
+        document.addEventListener('contextmenu', preventContextMenu, true);
+        
         const checkHealth = async () => {
             try {
                 const res = await api.get('/health');
@@ -176,7 +204,12 @@ rl.on('close', () => {
             }
         };
         fetchProblem();
-        return () => window.removeEventListener('themechange', handler);
+        
+        return () => {
+            window.removeEventListener('themechange', handler);
+            document.removeEventListener('keydown', preventCopyPaste, true);
+            document.removeEventListener('contextmenu', preventContextMenu, true);
+        };
     }, [resolvedParams.id]);
 
     // Timer effect
@@ -625,6 +658,24 @@ rl.on('close', () => {
                                         value={code}
                                         onChange={(value) => setCode(value || '')}
                                         theme={editorTheme}
+                                        onMount={(editor, monaco) => {
+                                            // Disable copy, cut, paste commands
+                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {});
+                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {});
+                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {});
+                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {});
+                                            
+                                            // Disable context menu using the browser event
+                                            editor.onDidLayoutChange(() => {
+                                                const editorDomNode = editor.getDomNode();
+                                                if (editorDomNode) {
+                                                    editorDomNode.addEventListener('contextmenu', (e: MouseEvent) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                    });
+                                                }
+                                            });
+                                        }}
                                         options={{
                                             minimap: { enabled: false },
                                             fontSize: 15,
@@ -638,6 +689,8 @@ rl.on('close', () => {
                                             cursorSmoothCaretAnimation: "on",
                                             wordWrap: "on",
                                             automaticLayout: true,
+                                            contextmenu: false,
+                                            readOnly: false,
                                         }}
                                     />
                                 </div>
