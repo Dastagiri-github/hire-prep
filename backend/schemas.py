@@ -20,9 +20,9 @@ class User(UserBase):
     name: Optional[str] = None
     dob: Optional[date] = None
     reset_password: int = 1
-    target_companies: List[str]
-    stats: Dict[str, Any]
-    reputation: int = 0
+    target_companies: Optional[List[str]] = []
+    stats: Optional[Dict[str, Any]] = {}
+    reputation: Optional[int] = 0
     last_active_at: Optional[datetime] = None
     created_at: datetime
 
