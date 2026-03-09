@@ -34,7 +34,7 @@ export default function LeaderboardPage() {
     if (isLoading) {
         return (
             <AuthGuard>
-                <div className="min-h-screen bg-[#0a0f1c] pt-24 pb-12 px-4 flex items-center justify-center">
+                <div className="min-h-screen bg-[#0a0f1c] py-8 px-4 flex items-center justify-center">
                     <div className="text-center">
                         <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500 mb-4"></div>
                         <p className="text-gray-400">Loading Top Coders...</p>
@@ -46,7 +46,7 @@ export default function LeaderboardPage() {
 
     return (
         <AuthGuard>
-            <div className="min-h-screen bg-gradient-to-b from-[#0a0f1c] to-[#111827] pt-24 pb-12 px-4">
+            <div className="min-h-screen bg-gradient-to-b from-[#0a0f1c] to-[#111827] py-8 px-4">
                 <div className="max-w-[1000px] mx-auto">
 
                     {/* Header */}

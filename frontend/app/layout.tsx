@@ -36,12 +36,12 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col md:flex-row`}
       >
         <GoogleAuthProvider>
           <UserPing />
           <Navbar />
-          <main className="flex-grow">
+          <main className="flex-grow min-w-0 flex flex-col relative w-full overflow-x-hidden">
             {children}
           </main>
         </GoogleAuthProvider>

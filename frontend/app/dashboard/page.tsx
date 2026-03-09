@@ -186,7 +186,7 @@ export default function Dashboard() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-[#0a0f1c] p-4 md:p-8 pt-24">
+      <div className="min-h-screen bg-[#0a0f1c] p-4 md:p-8">
         <div className="max-w-[1400px] mx-auto grid grid-cols-1 xl:grid-cols-4 gap-8">
 
           {/* LEFT SIDEBAR: PROFILE & METRICS (1/4 width on desktop) */}
