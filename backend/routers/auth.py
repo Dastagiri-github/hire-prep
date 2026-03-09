@@ -345,14 +345,28 @@ def get_solved_problems(
         .all()
     )
     
+    import ast
+    def safe_parse(val):
+        if not val:
+            return []
+        if isinstance(val, list):
+            return val
+        if isinstance(val, str):
+            try:
+                parsed = ast.literal_eval(val)
+                if isinstance(parsed, list): return parsed
+            except:
+                pass
+        return []
+
     solved_problems = []
     for problem_id, problem in solved_submissions:
         solved_problems.append({
             "id": problem.id,
             "title": problem.title,
             "difficulty": problem.difficulty,
-            "tags": problem.tags or [],
-            "companies": problem.companies or []
+            "tags": safe_parse(problem.tags),
+            "companies": safe_parse(problem.companies)
         })
     
     return solved_problems
