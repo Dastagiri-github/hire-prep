@@ -28,6 +28,8 @@ def read_problems(
     
     from sqlalchemy import func, case
     import models
+    import ast
+    
     stats = db.query(
         models.UserPerformanceLog.problem_id,
         func.count(models.UserPerformanceLog.id).label('total'),
@@ -41,8 +43,23 @@ def read_problems(
         if total > 0:
             rate_map[stat.problem_id] = round((float(accepted) / float(total)) * 100, 1)
             
+    def safe_parse(val):
+        if not val:
+            return []
+        if isinstance(val, list):
+            return val
+        if isinstance(val, str):
+            try:
+                parsed = ast.literal_eval(val)
+                if isinstance(parsed, list): return parsed
+            except:
+                pass
+        return []
+            
     for p in problems:
         setattr(p, 'acceptance_rate', rate_map.get(p.id, 0.0))
+        setattr(p, 'tags', safe_parse(p.tags))
+        setattr(p, 'companies', safe_parse(p.companies))
         
     return problems
 
@@ -60,9 +77,21 @@ def get_companies(db: Session = Depends(database.get_db)):
     # Aggregate companies from all problems
     problems = crud.get_problems(db, limit=1000)
     company_stats = {}
+    
+    import ast
+    def safe_parse(val):
+        if not val: return []
+        if isinstance(val, list): return val
+        if isinstance(val, str):
+            try:
+                parsed = ast.literal_eval(val)
+                if isinstance(parsed, list): return parsed
+            except: pass
+        return []
 
     for p in problems:
-        for company in p.companies:
+        companies = safe_parse(p.companies)
+        for company in companies:
             if company not in company_stats:
                 company_stats[company] = {"name": company, "count": 0, "problems": []}
             company_stats[company]["count"] += 1
@@ -74,7 +103,25 @@ def get_companies(db: Session = Depends(database.get_db)):
 @router.get("/companies/{company_name}", response_model=List[schemas.Problem])
 def get_company_problems(company_name: str, db: Session = Depends(database.get_db)):
     problems = crud.get_problems(db, limit=1000)
-    filtered = [p for p in problems if company_name in p.companies]
+    
+    import ast
+    def safe_parse(val):
+        if not val: return []
+        if isinstance(val, list): return val
+        if isinstance(val, str):
+            try:
+                parsed = ast.literal_eval(val)
+                if isinstance(parsed, list): return parsed
+            except: pass
+        return []
+        
+    filtered = []
+    for p in problems:
+        if company_name in safe_parse(p.companies):
+            setattr(p, 'tags', safe_parse(p.tags))
+            setattr(p, 'companies', safe_parse(p.companies))
+            filtered.append(p)
+            
     return filtered
 
 
