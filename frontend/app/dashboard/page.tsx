@@ -112,12 +112,12 @@ export default function Dashboard() {
       if (!currentUserId) return;
 
       try {
-        // Parallel fetching for performance
+        // Parallel fetching for performance with individual error handling to prevent complete failure
         const [probsRes, recRes, statsRes, solvedRes] = await Promise.all([
-          api.get('/problems/'),
-          api.get('/recommendations/'),
-          api.get('/stats/user'),
-          api.get('/auth/solved-problems')
+          api.get('/problems/').catch(e => ({ data: [] })),
+          api.get('/recommendations/').catch(e => ({ data: { problems: [] } })),
+          api.get('/stats/user').catch(e => ({ data: null })),
+          api.get('/auth/solved-problems').catch(e => ({ data: [] }))
         ]);
 
         setAllProblems(probsRes.data);

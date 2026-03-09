@@ -31,18 +31,33 @@ def get_recommendation_list(
     results = get_recommendations(db, current_user.id, top_n=top_n)
 
     if not results:
-        raise HTTPException(status_code=404, detail="No recommendations available")
+        return {
+            "problems": [],
+            "reason": "No recommendations available",
+            "confidence": 0.0
+        }
 
     # Build response
     recommendations = []
+    import ast
+    def safe_parse(val):
+        if not val: return []
+        if isinstance(val, list): return val
+        if isinstance(val, str):
+            try:
+                parsed = ast.literal_eval(val)
+                if isinstance(parsed, list): return parsed
+            except: pass
+        return []
+
     for item in results:
         problem = item["problem"]
         recommendations.append({
             "id": problem.id,
             "title": problem.title,
             "difficulty": problem.difficulty,
-            "tags": problem.tags or [],
-            "companies": problem.companies or [],
+            "tags": safe_parse(problem.tags),
+            "companies": safe_parse(problem.companies),
             "score": item["score"],
             "reason": item["reason"],
         })
@@ -71,13 +86,24 @@ def get_next_recommendation(
     if not result:
         raise HTTPException(status_code=404, detail="No suitable recommendation found")
 
+    import ast
+    def safe_parse(val):
+        if not val: return []
+        if isinstance(val, list): return val
+        if isinstance(val, str):
+            try:
+                parsed = ast.literal_eval(val)
+                if isinstance(parsed, list): return parsed
+            except: pass
+        return []
+
     problem = result["problem"]
     return {
         "id": problem.id,
         "title": problem.title,
         "difficulty": problem.difficulty,
-        "tags": problem.tags or [],
-        "companies": problem.companies or [],
+        "tags": safe_parse(problem.tags),
+        "companies": safe_parse(problem.companies),
         "score": result["score"],
         "reason": result["reason"],
     }
@@ -95,6 +121,17 @@ def get_learning_path_endpoint(
 
     result = get_learning_path(db, current_user.id, focus_tags=tags, path_length=path_length)
 
+    import ast
+    def safe_parse(val):
+        if not val: return []
+        if isinstance(val, list): return val
+        if isinstance(val, str):
+            try:
+                parsed = ast.literal_eval(val)
+                if isinstance(parsed, list): return parsed
+            except: pass
+        return []
+
     # Format problems for response
     path_problems = []
     for item in result.get("problems", []):
@@ -104,8 +141,8 @@ def get_learning_path_endpoint(
             "id": problem.id,
             "title": problem.title,
             "difficulty": problem.difficulty,
-            "tags": problem.tags or [],
-            "companies": problem.companies or [],
+            "tags": safe_parse(problem.tags),
+            "companies": safe_parse(problem.companies),
             "focus": item.get("focus", []),
         })
 
@@ -131,6 +168,17 @@ def get_similar_problems(
     similarity_engine.initialize(db)
     similar = similarity_engine.get_similar_problems(db, problem_id, top_n=top_n)
 
+    import ast
+    def safe_parse(val):
+        if not val: return []
+        if isinstance(val, list): return val
+        if isinstance(val, str):
+            try:
+                parsed = ast.literal_eval(val)
+                if isinstance(parsed, list): return parsed
+            except: pass
+        return []
+
     results = []
     for pid, score in similar:
         p = db.query(models.Problem).filter(models.Problem.id == pid).first()
@@ -139,8 +187,8 @@ def get_similar_problems(
                 "id": p.id,
                 "title": p.title,
                 "difficulty": p.difficulty,
-                "tags": p.tags or [],
-                "companies": p.companies or [],
+                "tags": safe_parse(p.tags),
+                "companies": safe_parse(p.companies),
                 "similarity_score": round(score, 3),
             })
 
