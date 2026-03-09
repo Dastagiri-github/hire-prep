@@ -43,7 +43,7 @@ def get_all_users_stats(db: Session = Depends(database.get_db)):
     # Group by user_id
     solved_counts = db.query(
         models.UserPerformanceLog.user_id,
-        func.count(func.distinct(models.UserPerformanceLog.problem_id + models.UserPerformanceLog.problem_type))
+        func.count(func.distinct(func.concat(models.UserPerformanceLog.problem_type, "_", models.UserPerformanceLog.problem_id)))
     ).filter(
         models.UserPerformanceLog.status.in_(["Accepted", "Correct"])
     ).group_by(
