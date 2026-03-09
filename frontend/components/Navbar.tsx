@@ -86,8 +86,14 @@ const Navbar = () => {
           </span>
         </Link>
 
-        {/* Navigation box - centered in navbar */}
         <div className="hidden md:flex items-center gap-2 p-1 rounded-xl glass border border-white/5 dark:border-white/5 bright:border-gray-200 absolute left-1/2 transform -translate-x-1/2">
+          <Link
+            href="/dsa"
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${isActive('/dsa')}`}
+          >
+            <Code2 className="w-4 h-4" />
+            DSA
+          </Link>
           <Link
             href="/dashboard"
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${isActive('/dashboard')}`}
@@ -169,6 +175,9 @@ const Navbar = () => {
         {mobileOpen && (
           <div className="md:hidden absolute top-full right-4 mt-2 w-64 bg-white/5 bright:bg-white rounded-xl border border-white/5 dark:border-white/5 bright:border-bright-border p-3 shadow-lg z-50">
             <div className="flex flex-col gap-2">
+              <Link href="/dsa" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isActive('/dsa')}`}>
+                <Code2 className="w-4 h-4" /> DSA
+              </Link>
               <Link href="/dashboard" onClick={() => setMobileOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${isActive('/dashboard')}`}>
                 <LayoutDashboard className="w-4 h-4" /> Dashboard
               </Link>

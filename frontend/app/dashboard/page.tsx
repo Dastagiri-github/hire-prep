@@ -73,21 +73,14 @@ interface DailyChallenge {
 }
 
 export default function Dashboard() {
-  const [problems, setProblems] = useState<Problem[]>([]);
-  const [allProblems, setAllProblems] = useState<Problem[]>([]);
   const [recommendedProblems, setRecommendedProblems] = useState<Problem[]>([]);
   const [solvedProblems, setSolvedProblems] = useState<Problem[]>([]);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [dailyChallenge, setDailyChallenge] = useState<DailyChallenge | null>(null);
   const [dailySolved, setDailySolved] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<string>('All');
-  const [selectedTopic, setSelectedTopic] = useState<string>('All');
-  const [isCompanyExpanded, setIsCompanyExpanded] = useState(false);
-  const [isTopicExpanded, setIsTopicExpanded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<number | null>(null);
-  const [viewMode, setViewMode] = useState<'recommended' | 'solved' | 'all'>('recommended');
   const itemsPerPage = 6;
 
   useEffect(() => {
@@ -113,15 +106,12 @@ export default function Dashboard() {
 
       try {
         // Parallel fetching for performance with individual error handling to prevent complete failure
-        const [probsRes, recRes, statsRes, solvedRes] = await Promise.all([
-          api.get('/problems/').catch(e => ({ data: [] })),
+        const [recRes, statsRes, solvedRes] = await Promise.all([
           api.get('/recommendations/').catch(e => ({ data: { problems: [] } })),
           api.get('/stats/user').catch(e => ({ data: null })),
           api.get('/auth/solved-problems').catch(e => ({ data: [] }))
         ]);
 
-        setAllProblems(probsRes.data);
-        setProblems(probsRes.data);
         setRecommendedProblems(recRes.data.problems || []);
 
         // Format activity graph data for react-activity-calendar
@@ -163,37 +153,7 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const getUniqueCompanies = () => {
-    const companies = new Set<string>();
-    allProblems.forEach(problem => {
-      problem.companies?.forEach(company => companies.add(company));
-    });
-    return ['All', ...Array.from(companies).sort()];
-  };
 
-  const getUniqueTopics = () => {
-    const topics = new Set<string>();
-    allProblems.forEach(problem => {
-      problem.tags?.forEach(tag => topics.add(tag));
-    });
-    return ['All', ...Array.from(topics).sort()];
-  };
-
-  const filteredProblems = () => {
-    let filtered = viewMode === 'recommended' ? recommendedProblems :
-      viewMode === 'solved' ? solvedProblems :
-        allProblems;
-
-    if (selectedCompany !== 'All') {
-      filtered = filtered.filter(p => p.companies?.includes(selectedCompany));
-    }
-
-    if (selectedTopic !== 'All') {
-      filtered = filtered.filter(p => p.tags?.includes(selectedTopic));
-    }
-
-    return filtered;
-  };
 
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
@@ -205,8 +165,8 @@ export default function Dashboard() {
     return `${hours}h ${remMins}m`;
   };
 
-  const totalPages = Math.ceil(filteredProblems().length / itemsPerPage);
-  const paginatedProblems = filteredProblems().slice(
+  const totalPages = Math.ceil(recommendedProblems.length / itemsPerPage);
+  const paginatedProblems = recommendedProblems.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -459,66 +419,12 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* TABS & FILTERS */}
+            {/* TABS & FILTERS - REMOVED */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gray-800 pb-4">
-              <div className="flex bg-[#111827] p-1 rounded-xl border border-gray-800">
-                <button
-                  onClick={() => setViewMode('recommended')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'recommended' ? 'bg-[#1e293b] text-white shadow' : 'text-gray-400 hover:text-white'
-                    }`}
-                >
-                  Recommended
-                </button>
-                <button
-                  onClick={() => setViewMode('all')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${viewMode === 'all' ? 'bg-[#1e293b] text-white shadow' : 'text-gray-400 hover:text-white'
-                    }`}
-                >
-                  All Problems
-                </button>
-              </div>
-
-              <div className="flex gap-3">
-                <div className="relative group">
-                  <button onClick={() => setIsCompanyExpanded(!isCompanyExpanded)} className="flex items-center justify-between min-w-[140px] px-4 py-2 bg-[#111827] border border-gray-800 rounded-xl text-white text-sm hover:border-gray-600 transition-colors">
-                    {selectedCompany === 'All' ? 'Companies' : selectedCompany}
-                    <ChevronDown className="w-4 h-4 ml-2 text-gray-400" />
-                  </button>
-                  {isCompanyExpanded && (
-                    <div className="absolute right-0 mt-2 w-48 bg-[#111827] border border-gray-800 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto overflow-hidden">
-                      {getUniqueCompanies().map(company => (
-                        <button
-                          key={company}
-                          onClick={() => { setSelectedCompany(company); setIsCompanyExpanded(false); setCurrentPage(1); }}
-                          className={`w-full text-left px-4 py-2 text-sm hover:bg-[#1e293b] transition-colors ${selectedCompany === company ? 'text-blue-400 bg-blue-500/10' : 'text-gray-300'}`}
-                        >
-                          {company}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="relative group">
-                  <button onClick={() => setIsTopicExpanded(!isTopicExpanded)} className="flex items-center justify-between min-w-[120px] px-4 py-2 bg-[#111827] border border-gray-800 rounded-xl text-white text-sm hover:border-gray-600 transition-colors">
-                    {selectedTopic === 'All' ? 'Topics' : selectedTopic}
-                    <ChevronDown className="w-4 h-4 ml-2 text-gray-400" />
-                  </button>
-                  {isTopicExpanded && (
-                    <div className="absolute right-0 mt-2 w-48 bg-[#111827] border border-gray-800 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto w-max max-w-[300px]">
-                      {getUniqueTopics().map(topic => (
-                        <button
-                          key={topic}
-                          onClick={() => { setSelectedTopic(topic); setIsTopicExpanded(false); setCurrentPage(1); }}
-                          className={`w-full text-left px-4 py-2 text-sm hover:bg-[#1e293b] transition-colors ${selectedTopic === topic ? 'text-blue-400 bg-blue-500/10' : 'text-gray-300'} truncate`}
-                        >
-                          {topic}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <h3 className="text-white font-medium flex items-center gap-2">
+                <Target className="w-5 h-5 text-blue-400" />
+                Recommended For You
+              </h3>
             </div>
 
             {/* PROBLEMS LIST (Table Format) */}
@@ -572,10 +478,10 @@ export default function Dashboard() {
                   })}
                 </tbody>
               </table>
-              {filteredProblems().length === 0 && (
+              {recommendedProblems.length === 0 && (
                 <div className="p-12 text-center text-gray-500">
                   <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  No problems found matching criteria
+                  No recommendations available at this time
                 </div>
               )}
             </div>
@@ -583,7 +489,7 @@ export default function Dashboard() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-between items-center pt-4">
-                <span className="text-gray-500 text-sm">Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredProblems().length)} of {filteredProblems().length}</span>
+                <span className="text-gray-500 text-sm">Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, recommendedProblems.length)} of {recommendedProblems.length}</span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
