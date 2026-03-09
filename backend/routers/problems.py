@@ -25,6 +25,25 @@ def read_problems(
     skip: int = 0, limit: int = 1000, db: Session = Depends(database.get_db)
 ):
     problems = crud.get_problems(db, skip=skip, limit=limit)
+    
+    from sqlalchemy import func, case
+    import models
+    stats = db.query(
+        models.UserPerformanceLog.problem_id,
+        func.count(models.UserPerformanceLog.id).label('total'),
+        func.sum(case((models.UserPerformanceLog.status.in_(['Accepted', 'Correct']), 1), else_=0)).label('accepted')
+    ).filter(models.UserPerformanceLog.problem_type == 'coding').group_by(models.UserPerformanceLog.problem_id).all()
+    
+    rate_map = {}
+    for stat in stats:
+        total = stat.total or 0
+        accepted = stat.accepted or 0
+        if total > 0:
+            rate_map[stat.problem_id] = round((float(accepted) / float(total)) * 100, 1)
+            
+    for p in problems:
+        setattr(p, 'acceptance_rate', rate_map.get(p.id, 0.0))
+        
     return problems
 
 

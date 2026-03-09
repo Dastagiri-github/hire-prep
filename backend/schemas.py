@@ -63,6 +63,7 @@ class ProblemBase(BaseModel):
     tags: List[str]
     companies: List[str]
     sample_test_cases: List[TestCase]
+    acceptance_rate: Optional[float] = 0.0
 
 
 class ProblemCreate(ProblemBase):
