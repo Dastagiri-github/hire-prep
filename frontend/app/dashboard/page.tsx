@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, ChevronDown, Filter, ArrowRight, Target, Trophy, BookOpen, Clock, Flame, Shield, Calendar as CalendarIcon, Star } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 import { ActivityCalendar } from 'react-activity-calendar';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
 
 interface Problem {
   id: number;
@@ -12,6 +13,7 @@ interface Problem {
   difficulty: string;
   companies: string[];
   tags: string[];
+  acceptance_rate?: number;
 }
 
 interface HeatmapData {
@@ -236,8 +238,11 @@ export default function Dashboard() {
                 <Target className="w-24 h-24" />
               </div>
               <div className="flex items-center gap-4 mb-6 relative z-10">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                  {stats?.total_solved || 0}
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                    {stats?.total_solved || 0}
+                  </div>
+                  <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-[#111827] rounded-full shadow-[0_0_10px_rgba(34,197,94,0.5)]" title="Online"></div>
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-white">Your Rank</h2>
@@ -301,6 +306,22 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
+            {/* Skill Radar Chart */}
+            {stats?.topic_radar && stats.topic_radar.length > 0 && (
+              <div className="bg-[#111827] rounded-2xl border border-gray-800 p-6 shadow-lg">
+                <h3 className="text-gray-400 font-medium text-sm mb-4">Topic Skills</h3>
+                <div className="h-48 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={stats.topic_radar}>
+                      <PolarGrid stroke="#374151" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                      <Radar name="Skills" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
 
             {/* Badges (If any) */}
             {stats?.badges && stats.badges.length > 0 && (
@@ -392,6 +413,51 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
+
+            {/* RECENT SUBMISSIONS FEED */}
+            {stats?.recent_submissions && stats.recent_submissions.length > 0 && (
+              <div className="bg-[#111827] rounded-2xl border border-gray-800 p-6 shadow-lg">
+                <h3 className="text-white font-medium flex items-center gap-2 mb-6">
+                  <Clock className="w-5 h-5 text-gray-400" />
+                  Recent Submissions
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                      <tr className="border-b border-gray-800 text-gray-400 text-sm">
+                        <th className="font-medium p-3 pl-4">Time</th>
+                        <th className="font-medium p-3">Problem</th>
+                        <th className="font-medium p-3">Status</th>
+                        <th className="font-medium p-3 text-right pr-4">Time Taken</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.recent_submissions.slice(0, 5).map((sub, idx) => (
+                        <tr key={sub.id} className={`border-b border-gray-800/50 hover:bg-[#1e293b]/50 transition-colors ${idx % 2 === 0 ? 'bg-[#0a0f1c]/30' : ''}`}>
+                          <td className="p-3 pl-4 text-sm text-gray-400 whitespace-nowrap">
+                            {new Date(sub.submitted_at).toLocaleDateString()}
+                          </td>
+                          <td className="p-3">
+                            <Link href={`/${sub.problem_type === 'coding' ? 'problem' : sub.problem_type === 'sql' ? 'sql' : 'aptitude'}/${sub.problem_id}`} className="text-white font-medium hover:text-blue-400 transition-colors inline-block">
+                              {sub.title}
+                            </Link>
+                            <span className="ml-2 text-xs text-gray-400 bg-gray-800 px-2 py-0.5 rounded-full capitalize">{sub.problem_type}</span>
+                          </td>
+                          <td className="p-3">
+                            <span className={`text-sm font-medium ${sub.status === 'Accepted' || sub.status === 'Correct' ? 'text-green-500' : 'text-red-500'}`}>
+                              {sub.status}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right pr-4 text-sm text-gray-400 font-mono">
+                            {sub.time_spent_seconds ? formatTime(sub.time_spent_seconds) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* TABS & FILTERS */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gray-800 pb-4">
@@ -486,8 +552,11 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="p-4 text-gray-400 text-sm hidden md:table-cell">
-                          <div className="w-16 h-1.5 bg-gray-800 rounded-full overflow-hidden mt-1">
-                            <div className="h-full bg-blue-500" style={{ width: `${Math.floor(Math.random() * (75 - 30) + 30)}%` }}></div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-8 text-right block text-xs">{problem.acceptance_rate?.toFixed(1) || '0.0'}%</span>
+                            <div className="w-16 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 transition-all" style={{ width: `${problem.acceptance_rate || 0}%` }}></div>
+                            </div>
                           </div>
                         </td>
                         <td className="p-4">
