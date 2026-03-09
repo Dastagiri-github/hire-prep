@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, ChevronDown, BookOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
 
 interface Problem {
@@ -17,10 +17,17 @@ interface Problem {
 export default function DSAPage() {
     const [allProblems, setAllProblems] = useState<Problem[]>([]);
     const [solvedProblems, setSolvedProblems] = useState<Problem[]>([]);
-    const [selectedCompany, setSelectedCompany] = useState<string>('All');
-    const [selectedTopic, setSelectedTopic] = useState<string>('All');
-    const [isCompanyExpanded, setIsCompanyExpanded] = useState(false);
-    const [isTopicExpanded, setIsTopicExpanded] = useState(false);
+    const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
+    const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
+    const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+
+    const toggleSelection = (setter: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
+        setter(prev => {
+            const newSelection = prev.includes(value) ? prev.filter(item => item !== value) : [...prev, value];
+            setCurrentPage(1);
+            return newSelection;
+        });
+    };
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const itemsPerPage = 10;
@@ -50,7 +57,7 @@ export default function DSAPage() {
         allProblems.forEach(problem => {
             problem.companies?.forEach(company => companies.add(company));
         });
-        return ['All', ...Array.from(companies).sort()];
+        return Array.from(companies).sort();
     };
 
     const getUniqueTopics = () => {
@@ -58,18 +65,22 @@ export default function DSAPage() {
         allProblems.forEach(problem => {
             problem.tags?.forEach(tag => topics.add(tag));
         });
-        return ['All', ...Array.from(topics).sort()];
+        return Array.from(topics).sort();
     };
 
     const filteredProblems = () => {
         let filtered = allProblems;
 
-        if (selectedCompany !== 'All') {
-            filtered = filtered.filter(p => p.companies?.includes(selectedCompany));
+        if (selectedDifficulties.length > 0) {
+            filtered = filtered.filter(p => selectedDifficulties.includes(p.difficulty));
         }
 
-        if (selectedTopic !== 'All') {
-            filtered = filtered.filter(p => p.tags?.includes(selectedTopic));
+        if (selectedCompanies.length > 0) {
+            filtered = filtered.filter(p => p.companies?.some(c => selectedCompanies.includes(c)));
+        }
+
+        if (selectedTopics.length > 0) {
+            filtered = filtered.filter(p => p.tags?.some(tag => selectedTopics.includes(tag)));
         }
 
         return filtered;
@@ -106,46 +117,86 @@ export default function DSAPage() {
                     </div>
 
                     {/* FILTERS */}
-                    <div className="flex gap-3 justify-end border-b border-gray-800 pb-4">
-                        <div className="relative group">
-                            <button onClick={() => setIsCompanyExpanded(!isCompanyExpanded)} className="flex items-center justify-between min-w-[140px] px-4 py-2 bg-[#111827] border border-gray-800 rounded-xl text-white text-sm hover:border-gray-600 transition-colors">
-                                {selectedCompany === 'All' ? 'Companies' : selectedCompany}
-                                <ChevronDown className="w-4 h-4 ml-2 text-gray-400" />
-                            </button>
-                            {isCompanyExpanded && (
-                                <div className="absolute right-0 mt-2 w-48 bg-[#111827] border border-gray-800 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto overflow-hidden">
+                    <div className="space-y-4 border-b border-gray-800 pb-6 mb-6">
+                        {/* Difficulty Filter */}
+                        <div>
+                            <h3 className="text-sm font-medium text-gray-400 mb-2">Difficulty</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {['Easy', 'Medium', 'Hard'].map(diff => (
+                                    <button
+                                        key={diff}
+                                        onClick={() => toggleSelection(setSelectedDifficulties, diff)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedDifficulties.includes(diff)
+                                            ? (diff === 'Easy' ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30' :
+                                                diff === 'Medium' ? 'bg-[#eab308]/20 text-[#eab308] border border-[#eab308]/30' :
+                                                    'bg-[#ef4444]/20 text-[#ef4444] border border-[#ef4444]/30')
+                                            : 'bg-[#111827] text-gray-400 border border-gray-800 hover:border-gray-600'
+                                            }`}
+                                    >
+                                        {diff}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Companies Filter */}
+                        {getUniqueCompanies().length > 0 && (
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-400 mb-2">Companies</h3>
+                                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
                                     {getUniqueCompanies().map(company => (
                                         <button
                                             key={company}
-                                            onClick={() => { setSelectedCompany(company); setIsCompanyExpanded(false); setCurrentPage(1); }}
-                                            className={`w-full text-left px-4 py-2 text-sm hover:bg-[#1e293b] transition-colors ${selectedCompany === company ? 'text-blue-400 bg-blue-500/10' : 'text-gray-300'}`}
+                                            onClick={() => toggleSelection(setSelectedCompanies, company)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedCompanies.includes(company)
+                                                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                                : 'bg-[#111827] text-gray-400 border border-gray-800 hover:border-gray-600'
+                                                }`}
                                         >
                                             {company}
                                         </button>
                                     ))}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
 
-                        <div className="relative group">
-                            <button onClick={() => setIsTopicExpanded(!isTopicExpanded)} className="flex items-center justify-between min-w-[120px] px-4 py-2 bg-[#111827] border border-gray-800 rounded-xl text-white text-sm hover:border-gray-600 transition-colors">
-                                {selectedTopic === 'All' ? 'Topics' : selectedTopic}
-                                <ChevronDown className="w-4 h-4 ml-2 text-gray-400" />
-                            </button>
-                            {isTopicExpanded && (
-                                <div className="absolute right-0 mt-2 w-48 bg-[#111827] border border-gray-800 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto w-max max-w-[300px]">
+                        {/* Topics Filter */}
+                        {getUniqueTopics().length > 0 && (
+                            <div>
+                                <h3 className="text-sm font-medium text-gray-400 mb-2">Topics</h3>
+                                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
                                     {getUniqueTopics().map(topic => (
                                         <button
                                             key={topic}
-                                            onClick={() => { setSelectedTopic(topic); setIsTopicExpanded(false); setCurrentPage(1); }}
-                                            className={`w-full text-left px-4 py-2 text-sm hover:bg-[#1e293b] transition-colors ${selectedTopic === topic ? 'text-blue-400 bg-blue-500/10' : 'text-gray-300'} truncate`}
+                                            onClick={() => toggleSelection(setSelectedTopics, topic)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${selectedTopics.includes(topic)
+                                                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                                                : 'bg-[#111827] text-gray-400 border border-gray-800 hover:border-gray-600'
+                                                }`}
                                         >
                                             {topic}
                                         </button>
                                     ))}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
+
+                        {/* Clear Filters Button */}
+                        {(selectedDifficulties.length > 0 || selectedCompanies.length > 0 || selectedTopics.length > 0) && (
+                            <div className="flex justify-start mt-2">
+                                <button
+                                    onClick={() => {
+                                        setSelectedDifficulties([]);
+                                        setSelectedCompanies([]);
+                                        setSelectedTopics([]);
+                                        setCurrentPage(1);
+                                    }}
+                                    className="text-xs text-red-400 hover:text-red-300 font-medium transition-colors px-3 py-1.5 bg-red-500/10 rounded-lg border border-red-500/20"
+                                >
+                                    Clear Filters
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* PROBLEMS LIST */}
