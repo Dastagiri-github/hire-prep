@@ -49,6 +49,17 @@ class Employee(EmployeeBase):
         from_attributes = True
 
 
+class EmployeeUserStat(BaseModel):
+    id: int
+    name: Optional[str] = None
+    username: str
+    email: str
+    created_at: datetime
+    total_solved: int
+    total_time_spent_seconds: int
+    reputation: int
+
+
 # Problem Schemas
 class TestCase(BaseModel):
     input: str
