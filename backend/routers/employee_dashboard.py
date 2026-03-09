@@ -34,6 +34,50 @@ def get_metrics(db: Session = Depends(database.get_db)):
     }
 
 
+@router.get("/users", response_model=List[schemas.EmployeeUserStat])
+def get_all_users_stats(db: Session = Depends(database.get_db)):
+    """Fetch detailed statistics for all users for the employee dashboard."""
+    users = db.query(models.User).all()
+    
+    # 1. Total Problems Solved per user (distinct problem_type + problem_id)
+    # Group by user_id
+    solved_counts = db.query(
+        models.UserPerformanceLog.user_id,
+        func.count(func.distinct(models.UserPerformanceLog.problem_id + models.UserPerformanceLog.problem_type))
+    ).filter(
+        models.UserPerformanceLog.status.in_(["Accepted", "Correct"])
+    ).group_by(
+        models.UserPerformanceLog.user_id
+    ).all()
+    
+    user_solved_map = {item[0]: item[1] for item in solved_counts}
+
+    # 2. Total Time Spent per user
+    time_counts = db.query(
+        models.UserDailyActivity.user_id,
+        func.sum(models.UserDailyActivity.time_spent_seconds)
+    ).group_by(
+        models.UserDailyActivity.user_id
+    ).all()
+    
+    user_time_map = {item[0]: item[1] for item in time_counts}
+    
+    result = []
+    for u in users:
+        result.append(schemas.EmployeeUserStat(
+            id=u.id,
+            name=u.name,
+            username=u.username,
+            email=u.email,
+            created_at=u.created_at,
+            total_solved=user_solved_map.get(u.id, 0),
+            total_time_spent_seconds=user_time_map.get(u.id, 0),
+            reputation=u.reputation
+        ))
+        
+    return result
+
+
 # ==========================================
 # Daily Challenge Management
 # ==========================================

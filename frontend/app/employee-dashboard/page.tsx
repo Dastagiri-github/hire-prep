@@ -19,6 +19,18 @@ interface AssignPoDForm {
     problem_type: string;
 }
 
+interface UserStat {
+    id: number;
+    name: string | null;
+    username: string;
+    email: string;
+    created_at: string;
+    total_solved: number;
+    total_time_spent_seconds: number;
+    reputation: number;
+}
+
+
 export default function EmployeeDashboardOverview() {
     const [metrics, setMetrics] = useState<Metrics | null>(null);
     const [loading, setLoading] = useState(true);
@@ -29,6 +41,9 @@ export default function EmployeeDashboardOverview() {
     });
     const [podAssigning, setPodAssigning] = useState(false);
     const [podMessage, setPodMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    const [usersData, setUsersData] = useState<UserStat[]>([]);
+    const [loadingUsers, setLoadingUsers] = useState(true);
 
     // New additions for Random / Create PoD
     const [activeTab, setActiveTab] = useState<'assign' | 'create'>('assign');
@@ -49,6 +64,26 @@ export default function EmployeeDashboardOverview() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchUsersData = async () => {
+        setLoadingUsers(true);
+        try {
+            const response = await employeeApi.get("/employee/dashboard/users");
+            setUsersData(response.data);
+        } catch (error) {
+            console.error("Failed to fetch user stats", error);
+        } finally {
+            setLoadingUsers(false);
+        }
+    };
+
+    const formatTime = (seconds: number) => {
+        if (!seconds || seconds === 0) return "0m";
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        if (h > 0) return `${h}h ${m}m`;
+        return `${m}m`;
     };
 
     const handleAssignPoD = async (e: React.FormEvent) => {
@@ -115,6 +150,7 @@ export default function EmployeeDashboardOverview() {
 
     useEffect(() => {
         fetchMetrics();
+        fetchUsersData();
     }, []);
 
     return (
@@ -129,10 +165,10 @@ export default function EmployeeDashboardOverview() {
                     </div>
 
                     <button
-                        onClick={fetchMetrics}
+                        onClick={() => { fetchMetrics(); fetchUsersData(); }}
                         className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-medium text-gray-300 transition-all w-full md:w-auto"
                     >
-                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-teal-400' : ''}`} />
+                        <RefreshCw className={`w-4 h-4 ${(loading || loadingUsers) ? 'animate-spin text-teal-400' : ''}`} />
                         Refresh Data
                     </button>
                 </div>
@@ -371,6 +407,74 @@ export default function EmployeeDashboardOverview() {
                     <div className="glass-panel rounded-2xl border border-white/10 p-8 h-full min-h-[300px] flex flex-col items-center justify-center text-gray-500">
                         <Activity className="w-12 h-12 mb-4 opacity-50" />
                         <p>Detailed performance charts coming soon</p>
+                    </div>
+                </div>
+
+                {/* User Statistics Table */}
+                <div className="mt-8 glass-panel rounded-2xl border border-white/10 overflow-hidden relative">
+                    <div className="p-6 border-b border-white/5 bg-black/20 flex items-center gap-4">
+                        <div className="p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                            <Users className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-white">Registered Users Activity</h2>
+                            <p className="text-sm text-gray-400">Detailed performance metrics across all users</p>
+                        </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-gray-300">
+                            <thead className="text-xs uppercase bg-black/40 text-gray-400 border-b border-white/5">
+                                <tr>
+                                    <th className="px-6 py-4 font-semibold tracking-wider">User</th>
+                                    <th className="px-6 py-4 font-semibold tracking-wider">Join Date</th>
+                                    <th className="px-6 py-4 font-semibold tracking-wider text-right">Reputation</th>
+                                    <th className="px-6 py-4 font-semibold tracking-wider text-right">Problems Solved</th>
+                                    <th className="px-6 py-4 font-semibold tracking-wider text-right">Time Spent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loadingUsers ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                                            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 opacity-50" />
+                                            Loading user data...
+                                        </td>
+                                    </tr>
+                                ) : usersData.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                                            No users registered yet.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    usersData.map((user) => (
+                                        <tr key={user.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="font-medium text-white">{user.name || 'Anonymous'}</div>
+                                                <div className="text-xs text-gray-500">@{user.username}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {new Date(user.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                                    {user.reputation} pt
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                                    {user.total_solved} solved
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-mono text-xs text-gray-400">
+                                                {formatTime(user.total_time_spent_seconds)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
