@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { Trophy, Star, Medal, ArrowUp, ArrowDown, Activity } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
+import { LeaderboardSkeleton } from '@/components/Skeleton';
 
 interface LeaderboardUser {
     id: number;
@@ -34,12 +35,7 @@ export default function LeaderboardPage() {
     if (isLoading) {
         return (
             <AuthGuard>
-                <div className="min-h-screen bg-[#0a0f1c] py-8 px-4 flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500 mb-4"></div>
-                        <p className="text-gray-400">Loading Top Coders...</p>
-                    </div>
-                </div>
+                <LeaderboardSkeleton />
             </AuthGuard>
         );
     }

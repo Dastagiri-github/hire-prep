@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { employeeApi } from "@/lib/api";
 import { Users, Code2, Database, Activity, RefreshCw, Brain, Shuffle, PlusCircle, Bookmark } from "lucide-react";
 import EmployeeAuthGuard from "@/components/EmployeeAuthGuard";
+import { Skeleton } from "@/components/Skeleton";
 
 interface Metrics {
     users: number;
@@ -176,7 +177,7 @@ export default function EmployeeDashboardOverview() {
                 {!metrics && loading ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="glass-panel p-6 rounded-2xl border border-white/10 animate-pulse h-32" />
+                            <Skeleton key={i} className="h-40 w-full" />
                         ))}
                     </div>
                 ) : metrics ? (
@@ -435,12 +436,26 @@ export default function EmployeeDashboardOverview() {
                             </thead>
                             <tbody>
                                 {loadingUsers ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 opacity-50" />
-                                            Loading user data...
-                                        </td>
-                                    </tr>
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <tr key={i} className="border-b border-white/5 animate-pulse">
+                                            <td className="px-6 py-4">
+                                                <Skeleton className="h-5 w-32 mb-1" />
+                                                <Skeleton className="h-3 w-20" />
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <Skeleton className="h-4 w-24" />
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <Skeleton className="h-6 w-16 ml-auto rounded-full" />
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <Skeleton className="h-6 w-20 ml-auto rounded-full" />
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <Skeleton className="h-4 w-12 ml-auto" />
+                                            </td>
+                                        </tr>
+                                    ))
                                 ) : usersData.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-12 text-center text-gray-500">

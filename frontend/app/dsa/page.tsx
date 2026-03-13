@@ -4,6 +4,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import AuthGuard from '@/components/AuthGuard';
+import { DSASkeleton } from '@/components/Skeleton';
 
 interface Problem {
     id: number;
@@ -95,12 +96,7 @@ export default function DSAPage() {
     if (isLoading) {
         return (
             <AuthGuard>
-                <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 p-6 flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-                        <p className="text-gray-400">Loading DSA problems...</p>
-                    </div>
-                </div>
+                <DSASkeleton />
             </AuthGuard>
         );
     }

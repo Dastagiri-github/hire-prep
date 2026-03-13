@@ -6,6 +6,7 @@ import { Play, RotateCcw, CheckCircle2, AlertCircle, Terminal, ChevronDown, Chev
 import ThemeToggle from '@/components/ThemeToggle';
 import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
+import { ProblemViewSkeleton } from '@/components/Skeleton';
 
 interface Problem {
     id: number;
@@ -150,7 +151,7 @@ rl.on('close', () => {
             setEditorTheme(e?.detail === 'light' ? 'vs' : 'vs-dark');
         };
         window.addEventListener('themechange', handler);
-        
+
         // Prevent copy-paste keyboard shortcuts globally in the editor
         const preventCopyPaste = (e: KeyboardEvent) => {
             // Check if the event target is within the editor
@@ -164,7 +165,7 @@ rl.on('close', () => {
                 }
             }
         };
-        
+
         // Prevent context menu on the editor
         const preventContextMenu = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
@@ -174,10 +175,10 @@ rl.on('close', () => {
                 return false;
             }
         };
-        
+
         document.addEventListener('keydown', preventCopyPaste, true);
         document.addEventListener('contextmenu', preventContextMenu, true);
-        
+
         const checkHealth = async () => {
             try {
                 const res = await api.get('/health');
@@ -204,7 +205,7 @@ rl.on('close', () => {
             }
         };
         fetchProblem();
-        
+
         return () => {
             window.removeEventListener('themechange', handler);
             document.removeEventListener('keydown', preventCopyPaste, true);
@@ -215,13 +216,13 @@ rl.on('close', () => {
     // Timer effect
     useEffect(() => {
         let interval: NodeJS.Timeout;
-        
+
         if (isTimerRunning && startTime) {
             interval = setInterval(() => {
                 setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
             }, 1000);
         }
-        
+
         return () => {
             if (interval) clearInterval(interval);
         };
@@ -239,7 +240,7 @@ rl.on('close', () => {
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = seconds % 60;
-        
+
         if (hours > 0) {
             return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
@@ -280,7 +281,7 @@ rl.on('close', () => {
             });
 
             let outputMsg = `Status: ${response.data.status}\nExecution Time: ${response.data.execution_time}ms`;
-            
+
             if (response.data.memory_usage) {
                 outputMsg += `\nMemory Usage: ${response.data.memory_usage}KB`;
             }
@@ -324,12 +325,12 @@ rl.on('close', () => {
             setCurrentSubmission(submissionData);
 
             let outputMsg = `🎯 Test Results:\n\n`;
-            
+
             if (submissionData.test_case_results && submissionData.test_case_results.length > 0) {
                 outputMsg += `Total Test Cases: ${submissionData.total_test_cases}\n`;
                 outputMsg += `Passed: ${submissionData.test_cases_passed}\n`;
                 outputMsg += `Failed: ${submissionData.total_test_cases! - submissionData.test_cases_passed!}\n\n`;
-                
+
                 // Show individual test case results
                 submissionData.test_case_results.forEach((testCase, index) => {
                     outputMsg += `Test Case ${index + 1}: ${testCase.passed ? '✅ PASSED' : '❌ FAILED'}\n`;
@@ -343,7 +344,7 @@ rl.on('close', () => {
                 outputMsg += `Status: ${submissionData.status}\n`;
                 outputMsg += `Execution Time: ${submissionData.execution_time}ms\n`;
             }
-            
+
             if (submissionData.memory_usage) {
                 outputMsg += `Memory Usage: ${submissionData.memory_usage}KB\n`;
             }
@@ -436,12 +437,9 @@ rl.on('close', () => {
     );
 
     if (!problem) return (
-        <div className="flex items-center justify-center min-h-screen pt-20">
-            <div className="flex flex-col items-center gap-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                <p className="text-gray-400 animate-pulse">Loading problem...</p>
-            </div>
-        </div>
+        <AuthGuard>
+            <ProblemViewSkeleton />
+        </AuthGuard>
     );
 
     return (
@@ -474,8 +472,8 @@ rl.on('close', () => {
                                             className="p-1 hover:bg-yellow-500/20 rounded transition-colors"
                                             title={isTimerRunning ? "Pause Timer" : "Resume Timer"}
                                         >
-                                            {isTimerRunning ? 
-                                                <span className="text-xs">⏸</span> : 
+                                            {isTimerRunning ?
+                                                <span className="text-xs">⏸</span> :
                                                 <span className="text-xs">▶</span>
                                             }
                                         </button>
@@ -600,7 +598,7 @@ rl.on('close', () => {
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 {/* Bottom Row - Action Buttons */}
                                 <div className="flex items-center justify-between gap-3">
                                     <button
@@ -660,11 +658,11 @@ rl.on('close', () => {
                                         theme={editorTheme}
                                         onMount={(editor, monaco) => {
                                             // Disable copy, cut, paste commands
-                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {});
-                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {});
-                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {});
-                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {});
-                                            
+                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => { });
+                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => { });
+                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => { });
+                                            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => { });
+
                                             // Disable context menu using the browser event
                                             editor.onDidLayoutChange(() => {
                                                 const editorDomNode = editor.getDomNode();
@@ -716,13 +714,12 @@ rl.on('close', () => {
                                     <div className="flex-1 font-mono text-sm overflow-y-auto bg-[#0d1117]">
                                         {output ? (
                                             <div className="p-4">
-                                                <pre className={`whitespace-pre-wrap leading-relaxed ${
-                                                    output.includes('Accepted') ? 'text-green-400' :
-                                                    output.includes('Wrong Answer') ? 'text-red-400' :
-                                                    output.includes('Error') || output.includes('Compilation Error') || output.includes('Runtime Error') ? 'text-red-400' :
-                                                    output.includes('Time Limit Exceeded') ? 'text-yellow-400' :
-                                                    'text-gray-300'
-                                                }`}>
+                                                <pre className={`whitespace-pre-wrap leading-relaxed ${output.includes('Accepted') ? 'text-green-400' :
+                                                        output.includes('Wrong Answer') ? 'text-red-400' :
+                                                            output.includes('Error') || output.includes('Compilation Error') || output.includes('Runtime Error') ? 'text-red-400' :
+                                                                output.includes('Time Limit Exceeded') ? 'text-yellow-400' :
+                                                                    'text-gray-300'
+                                                    }`}>
                                                     {output}
                                                 </pre>
                                             </div>

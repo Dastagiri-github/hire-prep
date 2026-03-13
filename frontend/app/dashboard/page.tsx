@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, ChevronDown, Filter, ArrowRight, Target, Tro
 import AuthGuard from '@/components/AuthGuard';
 import { ActivityCalendar } from 'react-activity-calendar';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts';
+import { DashboardSkeleton } from '@/components/Skeleton';
 
 interface Problem {
   id: number;
@@ -174,12 +175,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <AuthGuard>
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 p-6 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-            <p className="text-gray-400">Loading your personalized dashboard...</p>
-          </div>
-        </div>
+        <DashboardSkeleton />
       </AuthGuard>
     );
   }
