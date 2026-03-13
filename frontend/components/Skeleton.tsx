@@ -360,75 +360,80 @@ export function DSASkeleton() {
 
 export function ProblemViewSkeleton() {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 pt-4 pb-4 animate-pulse">
-            {/* Header */}
-            <div className="max-w-[1400px] mx-auto px-6 mb-4">
-                <div className="bg-white/10 rounded-xl p-4 flex justify-between items-center">
-                    <div className="flex items-center gap-6">
-                        <Skeleton className="h-10 w-36 rounded-xl" />
-                        <Skeleton className="h-6 w-32 rounded" />
+        <div className="flex flex-col h-screen bg-[#0a0f1c] font-sans overflow-hidden animate-pulse">
+            {/* Minimal Header */}
+            <div className="flex items-center justify-between h-14 px-4 bg-[#111827] border-b border-gray-800 shrink-0">
+                <div className="flex items-center gap-4">
+                    <Skeleton className="h-5 w-24 rounded" />
+                    <div className="h-4 w-[1px] bg-gray-700"></div>
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="h-5 w-48 rounded" />
+                        <Skeleton className="h-5 w-16 rounded" />
                     </div>
-                    <Skeleton className="h-10 w-32 rounded-xl" />
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <Skeleton className="h-8 w-32 rounded-lg" />
+                    <Skeleton className="h-8 w-8 rounded-full" />
                 </div>
             </div>
 
-            <div className="max-w-[1400px] mx-auto px-6">
-                <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-5 items-start">
-                    {/* Left Panel */}
-                    <div className="space-y-4">
-                        <div className="bg-white/10 rounded-xl p-6 min-h-[500px]">
-                            <Skeleton className="h-8 w-3/4 mb-4 rounded" />
-                            <div className="flex gap-3 mb-8">
-                                <Skeleton className="h-8 w-20 rounded-xl" />
-                                <Skeleton className="h-8 w-24 rounded-xl" />
-                                <Skeleton className="h-8 w-32 rounded-xl" />
-                            </div>
+            {/* Main Split Layout */}
+            <div className="flex flex-1 overflow-hidden">
 
-                            <div className="space-y-3 mb-12">
-                                <Skeleton className="h-4 w-full rounded" />
-                                <Skeleton className="h-4 w-[90%] rounded" />
-                                <Skeleton className="h-4 w-[95%] rounded" />
-                                <Skeleton className="h-4 w-3/4 rounded" />
-                                <Skeleton className="h-4 w-[80%] rounded" />
-                            </div>
-
-                            <Skeleton className="h-6 w-40 mb-6 rounded" />
-                            <Skeleton className="h-40 w-full rounded-xl mb-4" />
-                            <Skeleton className="h-40 w-full rounded-xl" />
-                        </div>
+                {/* LEFT PANEL */}
+                <div className="w-1/2 flex flex-col border-r border-gray-800 bg-[#0d1117]">
+                    <div className="flex items-center h-10 bg-[#111827] border-b border-gray-800 px-4 shrink-0">
+                        <Skeleton className="h-4 w-24 rounded" />
                     </div>
 
-                    {/* Right Panel */}
-                    <div className="space-y-4">
-                        <div className="bg-white/10 rounded-xl p-4">
-                            <div className="flex justify-between items-center mb-6">
-                                <div className="flex gap-4">
-                                    <Skeleton className="h-12 w-32 rounded-xl" />
-                                    <Skeleton className="h-12 w-32 rounded-xl" />
-                                </div>
-                            </div>
-                            <div className="flex justify-start gap-4">
-                                <Skeleton className="h-12 w-36 rounded-xl" />
-                                <Skeleton className="h-12 w-36 rounded-xl" />
-                            </div>
+                    <div className="flex-1 p-6 md:p-8">
+                        <div className="flex gap-2 mb-8">
+                            <Skeleton className="h-6 w-16 rounded" />
+                            <Skeleton className="h-6 w-20 rounded" />
+                            <Skeleton className="h-6 w-24 rounded" />
                         </div>
 
-                        <div className="bg-[#1e1e1e] rounded-xl h-[520px] p-6">
-                            {/* Editor lines mock */}
-                            <div className="space-y-3">
-                                <Skeleton className="h-4 w-1/4 rounded bg-white/5" />
-                                <Skeleton className="h-4 w-1/3 rounded bg-white/5 ml-4" />
-                                <Skeleton className="h-4 w-1/2 rounded bg-white/5 ml-8" />
-                                <Skeleton className="h-4 w-1/3 rounded bg-white/5 ml-8" />
-                                <Skeleton className="h-4 w-1/4 rounded bg-white/5 ml-4" />
-                            </div>
+                        <div className="space-y-4 mb-12">
+                            <Skeleton className="h-4 w-full rounded" />
+                            <Skeleton className="h-4 w-[90%] rounded" />
+                            <Skeleton className="h-4 w-[95%] rounded" />
+                            <Skeleton className="h-4 w-3/4 rounded" />
+                            <Skeleton className="h-4 w-[80%] rounded" />
                         </div>
 
-                        <div className="bg-white/10 rounded-2xl h-[120px] p-4">
-                            <Skeleton className="h-6 w-40 rounded mb-4" />
-                        </div>
+                        <Skeleton className="h-6 w-32 mb-6 rounded" />
+                        <Skeleton className="h-32 w-full rounded-xl mb-4 bg-gray-800/40" />
+                        <Skeleton className="h-32 w-full rounded-xl bg-gray-800/40" />
                     </div>
                 </div>
+
+                {/* RIGHT PANEL */}
+                <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
+                    <div className="flex items-center justify-between h-10 px-4 bg-[#111827] border-b border-gray-800 shrink-0">
+                        <div className="flex items-center gap-3">
+                            <Skeleton className="h-5 w-24 rounded" />
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Skeleton className="h-6 w-16 rounded" />
+                            <Skeleton className="h-6 w-16 rounded" />
+                            <Skeleton className="h-6 w-20 rounded" />
+                        </div>
+                    </div>
+
+                    <div className="flex-1 p-6 space-y-3">
+                        <Skeleton className="h-4 w-1/4 rounded bg-gray-700/30" />
+                        <Skeleton className="h-4 w-1/3 rounded bg-gray-700/30 ml-4" />
+                        <Skeleton className="h-4 w-1/2 rounded bg-gray-700/30 ml-8" />
+                        <Skeleton className="h-4 w-1/3 rounded bg-gray-700/30 ml-8" />
+                        <Skeleton className="h-4 w-1/4 rounded bg-gray-700/30 ml-4" />
+                    </div>
+
+                    <div className="bg-[#111827] border-t border-gray-800 shrink-0 h-10 flex items-center px-4">
+                        <Skeleton className="h-4 w-24 rounded" />
+                    </div>
+                </div>
+
             </div>
         </div>
     );
