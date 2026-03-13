@@ -612,82 +612,107 @@ rl.on('close', () => {
                             </div>
                         </div>
 
-                        {/* Editor Component */}
-                        <div className="flex-1 relative">
-                            <Editor
-                                height="100%"
-                                defaultLanguage="python"
-                                language={language}
-                                value={code}
-                                onChange={(value) => setCode(value || '')}
-                                theme={editorTheme}
-                                onMount={(editor, monaco) => {
-                                    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => { });
-                                    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => { });
-                                    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => { });
-                                    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => { });
-                                    editor.onDidLayoutChange(() => {
-                                        const editorDomNode = editor.getDomNode();
-                                        if (editorDomNode) {
-                                            editorDomNode.addEventListener('contextmenu', (e: MouseEvent) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                            });
-                                        }
-                                    });
-                                }}
-                                options={{
-                                    minimap: { enabled: false },
-                                    fontSize: 14,
-                                    padding: { top: 16, bottom: 16 },
-                                    scrollBeyondLastLine: false,
-                                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                                    lineNumbers: "on",
-                                    renderLineHighlight: "all",
-                                    smoothScrolling: true,
-                                    cursorBlinking: "smooth",
-                                    wordWrap: "on",
-                                    automaticLayout: true,
-                                    contextmenu: false,
-                                    readOnly: false,
-                                }}
-                            />
-                        </div>
+                        {/* Editor and Console Resizable Vertical Split */}
+                        <PanelGroup direction="vertical" className="flex-1">
 
-                        {/* Console Panel (Bottom of right side) */}
-                        <div className={`flex flex-col bg-[#111827] border-t border-gray-800 shrink-0 transition-all duration-300 ease-in-out ${isOutputOpen ? 'h-56' : 'h-10'}`}>
-                            {/* Console Toolbar */}
+                            {/* Editor Component */}
+                            <Panel defaultSize={isOutputOpen ? 70 : 100} minSize={30} className="relative">
+                                <Editor
+                                    height="100%"
+                                    defaultLanguage="python"
+                                    language={language}
+                                    value={code}
+                                    onChange={(value) => setCode(value || '')}
+                                    theme={editorTheme}
+                                    onMount={(editor, monaco) => {
+                                        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => { });
+                                        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => { });
+                                        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => { });
+                                        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => { });
+                                        editor.onDidLayoutChange(() => {
+                                            const editorDomNode = editor.getDomNode();
+                                            if (editorDomNode) {
+                                                editorDomNode.addEventListener('contextmenu', (e: MouseEvent) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                });
+                                            }
+                                        });
+                                    }}
+                                    options={{
+                                        minimap: { enabled: false },
+                                        fontSize: 14,
+                                        padding: { top: 16, bottom: 16 },
+                                        scrollBeyondLastLine: false,
+                                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                        lineNumbers: "on",
+                                        renderLineHighlight: "all",
+                                        smoothScrolling: true,
+                                        cursorBlinking: "smooth",
+                                        wordWrap: "on",
+                                        automaticLayout: true,
+                                        contextmenu: false,
+                                        readOnly: false,
+                                    }}
+                                />
+                            </Panel>
+
+                            {/* Resizable Divider (Only show if output is open) */}
+                            {isOutputOpen && (
+                                <PanelResizeHandle className="h-1.5 bg-gray-800 hover:bg-blue-500/50 hover:cursor-row-resize active:bg-blue-500 transition-colors flex justify-center items-center group relative z-10 w-full">
+                                    <div className="w-8 h-0.5 bg-gray-600 rounded-full group-hover:bg-white transition-colors" />
+                                </PanelResizeHandle>
+                            )}
+
+                            {/* Console Panel */}
+                            {isOutputOpen && (
+                                <Panel defaultSize={30} minSize={20} className="flex flex-col bg-[#111827]">
+                                    {/* Console Toolbar */}
+                                    <button
+                                        onClick={() => setIsOutputOpen(false)}
+                                        className="flex items-center justify-between px-4 h-10 w-full bg-[#111827] border-b border-gray-800 hover:bg-gray-800/50 transition-colors select-none shrink-0"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Terminal className="w-4 h-4 text-gray-400" />
+                                            <span className="text-sm font-medium text-gray-300">Test Result</span>
+                                        </div>
+                                        <ChevronDown className="w-4 h-4 text-gray-500" />
+                                    </button>
+
+                                    {/* Console Content */}
+                                    <div className="flex-1 overflow-y-auto p-4 bg-[#0a0f1c] font-mono text-sm leading-relaxed custom-scrollbar">
+                                        {output ? (
+                                            <pre className={`whitespace-pre-wrap ${output.includes('Accepted') ? 'text-green-400' :
+                                                output.includes('Wrong Answer') ? 'text-red-400' :
+                                                    output.includes('Error') || output.includes('Compilation Error') || output.includes('Runtime Error') ? 'text-red-400' :
+                                                        output.includes('Time Limit Exceeded') ? 'text-yellow-400' :
+                                                            'text-gray-300'
+                                                }`}>
+                                                {output}
+                                            </pre>
+                                        ) : (
+                                            <div className="h-full flex items-center justify-center text-gray-600 select-none">
+                                                Run your code to see results here
+                                            </div>
+                                        )}
+                                    </div>
+                                </Panel>
+                            )}
+                        </PanelGroup>
+
+                        {/* Collapsed Console Toolbar (Fixed at bottom when closed) */}
+                        {!isOutputOpen && (
                             <button
-                                onClick={() => setIsOutputOpen(!isOutputOpen)}
-                                className="flex items-center justify-between px-4 h-10 w-full hover:bg-gray-800/50 transition-colors select-none"
+                                onClick={() => setIsOutputOpen(true)}
+                                className="flex items-center justify-between px-4 h-10 w-full bg-[#111827] border-t border-gray-800 hover:bg-gray-800/50 transition-colors select-none shrink-0"
                             >
                                 <div className="flex items-center gap-2">
                                     <Terminal className="w-4 h-4 text-gray-400" />
                                     <span className="text-sm font-medium text-gray-300">Test Result</span>
                                 </div>
-                                {isOutputOpen ? <ChevronDown className="w-4 h-4 text-gray-500" /> : <ChevronUp className="w-4 h-4 text-gray-500" />}
+                                <ChevronUp className="w-4 h-4 text-gray-500" />
                             </button>
-
-                            {/* Console Content */}
-                            {isOutputOpen && (
-                                <div className="flex-1 overflow-y-auto p-4 bg-[#0a0f1c] font-mono text-sm leading-relaxed custom-scrollbar">
-                                    {output ? (
-                                        <pre className={`whitespace-pre-wrap ${output.includes('Accepted') ? 'text-green-400' :
-                                            output.includes('Wrong Answer') ? 'text-red-400' :
-                                                output.includes('Error') || output.includes('Compilation Error') || output.includes('Runtime Error') ? 'text-red-400' :
-                                                    output.includes('Time Limit Exceeded') ? 'text-yellow-400' :
-                                                        'text-gray-300'
-                                            }`}>
-                                            {output}
-                                        </pre>
-                                    ) : (
-                                        <div className="h-full flex items-center justify-center text-gray-600 select-none">
-                                            Run your code to see results here
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </Panel>
 
                 </PanelGroup>

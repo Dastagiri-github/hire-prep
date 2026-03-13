@@ -416,28 +416,47 @@ export function ProblemViewSkeleton() {
 
                 {/* RIGHT PANEL */}
                 <Panel defaultSize={67} minSize={30} className="flex flex-col bg-[#1e1e1e]">
-                    <div className="flex items-center justify-between h-10 px-4 bg-[#111827] border-b border-gray-800 shrink-0">
-                        <div className="flex items-center gap-3">
-                            <Skeleton className="h-5 w-24 rounded" />
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Skeleton className="h-6 w-16 rounded" />
-                            <Skeleton className="h-6 w-16 rounded" />
-                            <Skeleton className="h-6 w-20 rounded" />
-                        </div>
-                    </div>
+                    <PanelGroup direction="vertical" className="flex-1">
 
-                    <div className="flex-1 p-6 space-y-3">
-                        <Skeleton className="h-4 w-1/4 rounded bg-gray-700/30" />
-                        <Skeleton className="h-4 w-1/3 rounded bg-gray-700/30 ml-4" />
-                        <Skeleton className="h-4 w-1/2 rounded bg-gray-700/30 ml-8" />
-                        <Skeleton className="h-4 w-1/3 rounded bg-gray-700/30 ml-8" />
-                        <Skeleton className="h-4 w-1/4 rounded bg-gray-700/30 ml-4" />
-                    </div>
+                        {/* Editor Component */}
+                        <Panel defaultSize={70} minSize={30} className="relative flex flex-col">
+                            <div className="flex items-center justify-between h-10 px-4 bg-[#111827] border-b border-gray-800 shrink-0">
+                                <div className="flex items-center gap-3">
+                                    <Skeleton className="h-5 w-24 rounded" />
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Skeleton className="h-6 w-16 rounded" />
+                                    <Skeleton className="h-6 w-16 rounded" />
+                                    <Skeleton className="h-6 w-20 rounded" />
+                                </div>
+                            </div>
 
-                    <div className="bg-[#111827] border-t border-gray-800 shrink-0 h-10 flex items-center px-4">
-                        <Skeleton className="h-4 w-24 rounded" />
-                    </div>
+                            <div className="flex-1 p-6 space-y-3">
+                                <Skeleton className="h-4 w-1/4 rounded bg-gray-700/30" />
+                                <Skeleton className="h-4 w-1/3 rounded bg-gray-700/30 ml-4" />
+                                <Skeleton className="h-4 w-1/2 rounded bg-gray-700/30 ml-8" />
+                                <Skeleton className="h-4 w-1/3 rounded bg-gray-700/30 ml-8" />
+                                <Skeleton className="h-4 w-1/4 rounded bg-gray-700/30 ml-4" />
+                            </div>
+                        </Panel>
+
+                        {/* Draggable Divider */}
+                        <PanelResizeHandle className="h-1.5 bg-gray-800 flex justify-center items-center w-full">
+                            <div className="w-8 h-0.5 bg-gray-600 rounded-full" />
+                        </PanelResizeHandle>
+
+                        {/* Console Panel */}
+                        <Panel defaultSize={30} minSize={20} className="flex flex-col bg-[#111827]">
+                            <div className="bg-[#111827] border-b border-gray-800 shrink-0 h-10 flex items-center justify-between px-4">
+                                <Skeleton className="h-4 w-24 rounded" />
+                                <Skeleton className="h-4 w-4 rounded" />
+                            </div>
+                            <div className="flex-1 p-4">
+                                <Skeleton className="h-4 w-1/3 rounded bg-gray-700/20" />
+                            </div>
+                        </Panel>
+
+                    </PanelGroup>
                 </Panel>
 
             </PanelGroup>
