@@ -301,7 +301,7 @@ export function LeaderboardSkeleton() {
 export function DSASkeleton() {
     return (
         <div className="min-h-screen bg-[#0a0f1c] p-4 md:p-8 animate-pulse">
-            <div className="max-w-6xl mx-auto space-y-6">
+            <div className="w-full mx-auto space-y-6">
                 {/* Header */}
                 <div>
                     <Skeleton className="h-8 w-64 mb-2 rounded" />

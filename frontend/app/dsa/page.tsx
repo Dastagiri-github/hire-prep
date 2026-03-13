@@ -104,7 +104,7 @@ export default function DSAPage() {
     return (
         <AuthGuard>
             <div className="min-h-screen bg-[#0a0f1c] p-4 md:p-8">
-                <div className="max-w-6xl mx-auto space-y-6">
+                <div className="w-full mx-auto space-y-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                             <h1 className="text-3xl font-bold text-white mb-2">Data Structures & Algorithms</h1>
