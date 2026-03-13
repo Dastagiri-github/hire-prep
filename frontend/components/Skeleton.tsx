@@ -1,4 +1,5 @@
 import React from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 interface SkeletonProps {
     className?: string;
@@ -378,11 +379,11 @@ export function ProblemViewSkeleton() {
                 </div>
             </div>
 
-            {/* Main Split Layout */}
-            <div className="flex flex-1 overflow-hidden">
+            {/* Main Split Layout with Resizable Panels */}
+            <PanelGroup direction="horizontal" className="flex flex-1 overflow-hidden">
 
                 {/* LEFT PANEL */}
-                <div className="w-1/2 flex flex-col border-r border-gray-800 bg-[#0d1117]">
+                <Panel defaultSize={33} minSize={20} className="flex flex-col border-r border-gray-800 bg-[#0d1117]">
                     <div className="flex items-center h-10 bg-[#111827] border-b border-gray-800 px-4 shrink-0">
                         <Skeleton className="h-4 w-24 rounded" />
                     </div>
@@ -406,10 +407,15 @@ export function ProblemViewSkeleton() {
                         <Skeleton className="h-32 w-full rounded-xl mb-4 bg-gray-800/40" />
                         <Skeleton className="h-32 w-full rounded-xl bg-gray-800/40" />
                     </div>
-                </div>
+                </Panel>
+
+                {/* Draggable Divider */}
+                <PanelResizeHandle className="w-1.5 bg-gray-800 flex flex-col justify-center items-center">
+                    <div className="h-8 w-0.5 bg-gray-600 rounded-full" />
+                </PanelResizeHandle>
 
                 {/* RIGHT PANEL */}
-                <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
+                <Panel defaultSize={67} minSize={30} className="flex flex-col bg-[#1e1e1e]">
                     <div className="flex items-center justify-between h-10 px-4 bg-[#111827] border-b border-gray-800 shrink-0">
                         <div className="flex items-center gap-3">
                             <Skeleton className="h-5 w-24 rounded" />
@@ -432,9 +438,9 @@ export function ProblemViewSkeleton() {
                     <div className="bg-[#111827] border-t border-gray-800 shrink-0 h-10 flex items-center px-4">
                         <Skeleton className="h-4 w-24 rounded" />
                     </div>
-                </div>
+                </Panel>
 
-            </div>
+            </PanelGroup>
         </div>
     );
 }

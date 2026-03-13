@@ -7,6 +7,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
 import { ProblemViewSkeleton } from '@/components/Skeleton';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 interface Problem {
     id: number;
@@ -461,8 +462,8 @@ rl.on('close', () => {
                                 {problem.id}. {problem.title}
                             </span>
                             <span className={`px-2 py-0.5 rounded text-xs font-bold ${problem.difficulty === 'Easy' ? 'bg-green-500/10 text-green-400' :
-                                    problem.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-400' :
-                                        'bg-red-500/10 text-red-400'
+                                problem.difficulty === 'Medium' ? 'bg-yellow-500/10 text-yellow-400' :
+                                    'bg-red-500/10 text-red-400'
                                 }`}>
                                 {problem.difficulty}
                             </span>
@@ -496,13 +497,13 @@ rl.on('close', () => {
                     </div>
                 </div>
 
-                {/* Main Split Layout */}
-                <div className="flex flex-1 overflow-hidden">
+                {/* Main Split Layout with Resizable Panels */}
+                <PanelGroup direction="horizontal" className="flex flex-1 overflow-hidden">
 
                     {/* LEFT PANEL: Problem Description */}
-                    <div className="w-1/2 flex flex-col border-r border-gray-800 bg-[#0d1117]">
+                    <Panel defaultSize={33} minSize={20} className="flex flex-col border-r border-gray-800 bg-[#0d1117]">
                         {/* Fake Tabs for Left Panel */}
-                        <div className="flex items-center h-10 bg-[#111827] border-b border-gray-800 px-2 shrink-0">
+                        <div className="flex items-center h-10 bg-[#111827] border-b border-gray-800 px-2 shrink-0 select-none">
                             <button className="flex items-center gap-2 h-full px-4 border-b-2 border-blue-500 text-blue-400 text-sm font-medium bg-[#0d1117]">
                                 <BookOpen className="w-4 h-4" /> Description
                             </button>
@@ -552,12 +553,17 @@ rl.on('close', () => {
                                 ))}
                             </div>
                         </div>
-                    </div>
+                    </Panel>
+
+                    {/* Draggable Divider */}
+                    <PanelResizeHandle className="w-1.5 bg-gray-800 hover:bg-blue-500/50 hover:cursor-col-resize active:bg-blue-500 transition-colors flex flex-col justify-center items-center group">
+                        <div className="h-8 w-0.5 bg-gray-600 rounded-full group-hover:bg-white transition-colors" />
+                    </PanelResizeHandle>
 
                     {/* RIGHT PANEL: Code Editor & Output */}
-                    <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
+                    <Panel defaultSize={67} minSize={30} className="flex flex-col bg-[#1e1e1e]">
                         {/* Editor Toolbar */}
-                        <div className="flex items-center justify-between h-10 px-4 bg-[#111827] border-b border-gray-800 shrink-0">
+                        <div className="flex items-center justify-between h-10 px-4 bg-[#111827] border-b border-gray-800 shrink-0 select-none">
                             <div className="flex items-center gap-3">
                                 <Code2 className="w-4 h-4 text-gray-400" />
                                 <select
@@ -653,7 +659,7 @@ rl.on('close', () => {
                             {/* Console Toolbar */}
                             <button
                                 onClick={() => setIsOutputOpen(!isOutputOpen)}
-                                className="flex items-center justify-between px-4 h-10 w-full hover:bg-gray-800/50 transition-colors"
+                                className="flex items-center justify-between px-4 h-10 w-full hover:bg-gray-800/50 transition-colors select-none"
                             >
                                 <div className="flex items-center gap-2">
                                     <Terminal className="w-4 h-4 text-gray-400" />
@@ -667,24 +673,24 @@ rl.on('close', () => {
                                 <div className="flex-1 overflow-y-auto p-4 bg-[#0a0f1c] font-mono text-sm leading-relaxed custom-scrollbar">
                                     {output ? (
                                         <pre className={`whitespace-pre-wrap ${output.includes('Accepted') ? 'text-green-400' :
-                                                output.includes('Wrong Answer') ? 'text-red-400' :
-                                                    output.includes('Error') || output.includes('Compilation Error') || output.includes('Runtime Error') ? 'text-red-400' :
-                                                        output.includes('Time Limit Exceeded') ? 'text-yellow-400' :
-                                                            'text-gray-300'
+                                            output.includes('Wrong Answer') ? 'text-red-400' :
+                                                output.includes('Error') || output.includes('Compilation Error') || output.includes('Runtime Error') ? 'text-red-400' :
+                                                    output.includes('Time Limit Exceeded') ? 'text-yellow-400' :
+                                                        'text-gray-300'
                                             }`}>
                                             {output}
                                         </pre>
                                     ) : (
-                                        <div className="h-full flex items-center justify-center text-gray-600">
+                                        <div className="h-full flex items-center justify-center text-gray-600 select-none">
                                             Run your code to see results here
                                         </div>
                                     )}
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </Panel>
 
-                </div>
+                </PanelGroup>
             </div>
         </AuthGuard>
     );
