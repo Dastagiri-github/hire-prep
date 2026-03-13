@@ -35,7 +35,7 @@ export default function CompaniesPage() {
   const paged = companies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className="p-4 pt-4 max-w-7xl mx-auto min-h-screen">
+    <div className="p-4 pt-4 w-full min-h-screen">
       <div className="flex items-center gap-4 mb-12">
         <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
           <Trophy className="w-8 h-8 text-blue-400" />
