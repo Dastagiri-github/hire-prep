@@ -341,10 +341,10 @@ def get_solved_problems(
             models.Submission.user_id == current_user.id,
             models.Submission.status == "Accepted"
         )
-        .distinct()
         .all()
     )
     
+    import json
     import ast
     def safe_parse(val):
         if not val:
@@ -353,14 +353,22 @@ def get_solved_problems(
             return val
         if isinstance(val, str):
             try:
-                parsed = ast.literal_eval(val)
+                parsed = json.loads(val)
                 if isinstance(parsed, list): return parsed
-            except:
-                pass
+            except Exception:
+                try:
+                    parsed = ast.literal_eval(val)
+                    if isinstance(parsed, list): return parsed
+                except Exception:
+                    pass
         return []
 
     solved_problems = []
+    seen_problem_ids = set()
     for problem_id, problem in solved_submissions:
+        if problem_id in seen_problem_ids:
+            continue
+        seen_problem_ids.add(problem_id)
         solved_problems.append({
             "id": problem.id,
             "title": problem.title,
