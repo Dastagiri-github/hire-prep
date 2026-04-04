@@ -246,34 +246,15 @@ rl.on('close', () => {
     const handleRun = async () => {
         setIsRunning(true);
         setOutput('Running tests...');
+        setCurrentSubmission(null);
         try {
             const response = await api.post('/submissions/', {
                 problem_id: resolvedParams.id,
                 code: code,
                 language: language
             });
-
-            let outputMsg = `Status: ${response.data.status}\nExecution Time: ${response.data.execution_time}ms`;
-
-            if (response.data.memory_usage) {
-                outputMsg += `\nMemory Usage: ${response.data.memory_usage}KB`;
-            }
-
-            if (response.data.status !== 'Accepted' && response.data.message) {
-                outputMsg += `\n\nError: ${response.data.message}`;
-                if (response.data.expected_output) outputMsg += `\nExpected: ${response.data.expected_output}`;
-                if (response.data.actual_output) outputMsg += `\nActual:   ${response.data.actual_output}`;
-            } else if (response.data.status === 'Accepted') {
-                outputMsg += `\n\n${response.data.message}`;
-                if (response.data.actual_output) {
-                    outputMsg += `\nOutput: ${response.data.actual_output}`;
-                }
-                if (response.data.test_cases_passed !== undefined) {
-                    outputMsg += `\nTest Cases Passed: ${response.data.test_cases_passed}/${response.data.total_test_cases}`;
-                }
-            }
-
-            setOutput(outputMsg);
+            setCurrentSubmission(response.data);
+            setOutput('');
         } catch (error) {
             setOutput('Error executing code. Please try again.');
         } finally {
@@ -296,52 +277,12 @@ rl.on('close', () => {
 
             const submissionData: SubmissionResult = response.data;
             setCurrentSubmission(submissionData);
-
-            let outputMsg = `🎯 Test Results:\n\n`;
-
-            if (submissionData.test_case_results && submissionData.test_case_results.length > 0) {
-                outputMsg += `Total Test Cases: ${submissionData.total_test_cases}\n`;
-                outputMsg += `Passed: ${submissionData.test_cases_passed}\n`;
-                outputMsg += `Failed: ${submissionData.total_test_cases! - submissionData.test_cases_passed!}\n\n`;
-
-                // Show individual test case results
-                submissionData.test_case_results.forEach((testCase, index) => {
-                    outputMsg += `Test Case ${index + 1}: ${testCase.passed ? '✅ PASSED' : '❌ FAILED'}\n`;
-                    if (!testCase.passed) {
-                        outputMsg += `  Expected: ${testCase.expected_output}\n`;
-                        outputMsg += `  Your Output: ${testCase.actual_output}\n`;
-                    }
-                    outputMsg += `  Time: ${testCase.execution_time}ms\n\n`;
-                });
-            } else {
-                outputMsg += `Status: ${submissionData.status}\n`;
-                outputMsg += `Execution Time: ${submissionData.execution_time}ms\n`;
-            }
-
-            if (submissionData.memory_usage) {
-                outputMsg += `Memory Usage: ${submissionData.memory_usage}KB\n`;
-            }
+            setOutput('');
 
             if (submissionData.status === 'Accepted') {
-                outputMsg += `\n🎉 Congratulations! Your solution has been accepted!\n`;
-                outputMsg += `All test cases passed successfully!\n`;
                 setShowNextButton(true);
                 fetchNextRecommendedProblem(true);
-                // Note: Solved problems are automatically tracked when submission is successful
-            } else if (submissionData.status === 'Wrong Answer') {
-                outputMsg += `\n❌ Wrong Answer. Please check your logic.\n`;
-                if (submissionData.test_cases_passed !== undefined) {
-                    outputMsg += `Test Cases Passed: ${submissionData.test_cases_passed}/${submissionData.total_test_cases}\n`;
-                }
-            } else if (submissionData.status === 'Time Limit Exceeded') {
-                outputMsg += `\n⏱️ Time Limit Exceeded. Your solution took too long to run.\n`;
-            } else if (submissionData.status === 'Compilation Error') {
-                outputMsg += `\n🔧 Compilation Error: ${submissionData.message}\n`;
-            } else if (submissionData.status === 'Runtime Error') {
-                outputMsg += `\n💥 Runtime Error: ${submissionData.message}\n`;
             }
-
-            setOutput(outputMsg);
         } catch (error) {
             setOutput('Error submitting solution. Please try again.');
         } finally {
@@ -640,16 +581,98 @@ rl.on('close', () => {
                                     </button>
 
                                     {/* Console Content */}
-                                    <div className="flex-1 overflow-y-auto p-4 bg-[#0a0f1c] font-mono text-sm leading-relaxed custom-scrollbar">
-                                        {output ? (
-                                            <pre className={`whitespace-pre-wrap ${output.includes('Accepted') ? 'text-green-400' :
-                                                output.includes('Wrong Answer') ? 'text-red-400' :
-                                                    output.includes('Error') || output.includes('Compilation Error') || output.includes('Runtime Error') ? 'text-red-400' :
-                                                        output.includes('Time Limit Exceeded') ? 'text-yellow-400' :
-                                                            'text-gray-300'
-                                                }`}>
-                                                {output}
-                                            </pre>
+                                    <div className="flex-1 overflow-y-auto p-4 bg-[#0a0f1c] font-sans text-sm leading-relaxed custom-scrollbar">
+                                        {currentSubmission ? (
+                                            <div className="flex flex-col gap-5">
+                                                {/* Header Status */}
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`text-xl font-bold ${currentSubmission.status === 'Accepted' ? 'text-green-500' : 'text-red-500'}`}>
+                                                        {currentSubmission.status}
+                                                    </span>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-4 text-xs font-medium text-gray-400">
+                                                    {currentSubmission.execution_time !== undefined && (
+                                                        <span className="bg-[#111827] px-3 py-1.5 rounded-md border border-gray-800">
+                                                            Runtime: <span className="text-gray-200">{currentSubmission.execution_time}ms</span>
+                                                        </span>
+                                                    )}
+                                                    {currentSubmission.memory_usage !== undefined && (
+                                                        <span className="bg-[#111827] px-3 py-1.5 rounded-md border border-gray-800">
+                                                            Memory: <span className="text-gray-200">{currentSubmission.memory_usage}KB</span>
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Error Message if any */}
+                                                {currentSubmission.status !== 'Accepted' && currentSubmission.message && (
+                                                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-md text-red-300 font-mono text-sm whitespace-pre-wrap">
+                                                        {currentSubmission.message}
+                                                    </div>
+                                                )}
+
+                                                {/* Test Case Results */}
+                                                {currentSubmission.test_case_results && currentSubmission.test_case_results.length > 0 && (
+                                                    <div className="flex flex-col gap-4 mt-2">
+                                                        <div className="text-gray-300 font-medium">
+                                                            Cases Passed: <span className="text-white font-bold">{currentSubmission.test_cases_passed} / {currentSubmission.total_test_cases}</span>
+                                                        </div>
+                                                        {currentSubmission.test_case_results.map((tc, idx) => (
+                                                            <div key={idx} className="p-4 bg-[#111827] border border-gray-800 rounded-lg space-y-3">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="font-bold text-gray-300">Test Case {idx + 1}</span>
+                                                                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${tc.passed ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                                        {tc.passed ? 'Passed' : 'Failed'}
+                                                                    </span>
+                                                                </div>
+                                                                
+                                                                {!tc.passed && (
+                                                                    <div className="grid gap-3 mt-2">
+                                                                        <div>
+                                                                            <span className="text-gray-500 text-xs uppercase font-bold tracking-wider mb-1 block">Expected Output</span>
+                                                                            <pre className="p-3 bg-black/40 rounded border border-gray-800 text-green-400 font-mono text-sm whitespace-pre-wrap">{tc.expected_output}</pre>
+                                                                        </div>
+                                                                        <div>
+                                                                            <span className="text-gray-500 text-xs uppercase font-bold tracking-wider mb-1 block">Your Output</span>
+                                                                            <pre className="p-3 bg-black/40 rounded border border-gray-800 text-red-400 font-mono text-sm whitespace-pre-wrap">{tc.actual_output || "Nothing returned"}</pre>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Simple actual/expected output if no test case array */}
+                                                {(!currentSubmission.test_case_results || currentSubmission.test_case_results.length === 0) && currentSubmission.status !== 'Accepted' && (currentSubmission.actual_output || currentSubmission.expected_output) && (
+                                                    <div className="grid gap-4 mt-2">
+                                                        {currentSubmission.expected_output && (
+                                                            <div>
+                                                                <span className="text-gray-500 text-xs uppercase font-bold tracking-wider mb-1 block">Expected Output</span>
+                                                                <pre className="p-3 bg-[#111827] rounded border border-gray-800 text-green-400 font-mono text-sm whitespace-pre-wrap">{currentSubmission.expected_output}</pre>
+                                                            </div>
+                                                        )}
+                                                        {currentSubmission.actual_output && (
+                                                            <div>
+                                                                <span className="text-gray-500 text-xs uppercase font-bold tracking-wider mb-1 block">Your Output</span>
+                                                                <pre className="p-3 bg-[#111827] rounded border border-gray-800 text-red-400 font-mono text-sm whitespace-pre-wrap">{currentSubmission.actual_output}</pre>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Simple actual output if accepted */}
+                                                {(!currentSubmission.test_case_results || currentSubmission.test_case_results.length === 0) && currentSubmission.status === 'Accepted' && currentSubmission.actual_output && (
+                                                    <div className="grid gap-2 mt-2">
+                                                        <div>
+                                                            <span className="text-gray-500 text-xs uppercase font-bold tracking-wider mb-1 block">Output</span>
+                                                            <pre className="p-3 bg-[#111827] rounded border border-gray-800 text-gray-300 font-mono text-sm whitespace-pre-wrap">{currentSubmission.actual_output}</pre>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : output ? (
+                                            <div className="text-gray-300 font-mono text-sm p-2">{output}</div>
                                         ) : (
                                             <div className="h-full flex items-center justify-center text-gray-600 select-none">
                                                 Run your code to see results here
