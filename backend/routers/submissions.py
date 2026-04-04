@@ -9,20 +9,12 @@ import schemas
 
 router = APIRouter(
     prefix="/submissions",
-    tags=["submissions"],
-)
-
 import ast
 import json
-import os
-import re
-import subprocess
-import sys
-import tempfile
 import time
+import httpx
 
-from cpp_executor import execute_cpp_code
-from java_executor import execute_java_code
+from config import settings
 
 
 def normalize_output_comparison(actual: str, expected: str) -> bool:
@@ -46,180 +38,24 @@ def normalize_output_comparison(actual: str, expected: str) -> bool:
             return actual_norm == expected_norm
 
 
-# Mock Execution Function (Replace with actual API call)
 async def execute_code(code: str, language: str, input_data: str):
-    if language == "python":
-        return execute_python_code(code, input_data)
-    elif language == "cpp":
-        return await execute_cpp_code(code, input_data)
-    elif language == "java":
-        return await execute_java_code(code, input_data)
-
-    # Mock logic for other languages:
-    if "error" in code:
-        return {"output": "", "error": "Syntax Error"}
-
-    # Simple mock for testing: assume the code just prints the input
-    return {"output": input_data.strip(), "error": None}
-
-
-def execute_python_code(code: str, input_data: str):
-    # Parse function name and args
-    try:
-        tree = ast.parse(code)
-        func_def = next(
-            (node for node in tree.body if isinstance(node, ast.FunctionDef)), None
-        )
-        if not func_def:
-            # If no function, run as script with input injection
-            return execute_python_script(code, input_data)
-
-        func_name = func_def.name
-        args = [arg.arg for arg in func_def.args.args]
-    except Exception as e:
-        return {"output": "", "error": f"Parse Error: {str(e)}"}
-
-    # Enhanced test harness for Two Sum style problems
-    test_harness = f'''
-import sys
-import json
-import re
-from typing import List, Any
-
-# Read input from stdin
-input_data = sys.stdin.read().strip()
-
-# Enhanced input parsing for Two Sum format
-def parse_input(input_str):
-    # Try regex parsing first (for "nums = [2,7,11,15], target = 9" format)
-    nums_match = re.search(r'nums\\s*=\\s*\\[(.*?)\\]', input_str)
-    target_match = re.search(r'target\\s*=\\s*(\\d+)', input_str)
+    url = f"{settings.EXECUTION_ENGINE_URL}/execute"
+    payload = {
+        "language": language,
+        "code": code,
+        "input": input_data
+    }
     
-    if nums_match and target_match:
-        # Extract numbers
-        nums_str = nums_match.group(1)
-        nums = [int(x.strip()) for x in nums_str.split(',') if x.strip()]
-        target = int(target_match.group(1))
-        return [nums, target]
-    
-    # Try JSON parsing
-    try:
-        parsed = json.loads(input_str)
-        if isinstance(parsed, dict):
-            if 'nums' in parsed and 'target' in parsed:
-                return [parsed['nums'], parsed['target']]
-            # Set variables from input dict
-            args = []
-            func_def = next((node for node in ast.parse(code).body if isinstance(node, ast.FunctionDef)), None)
-            if func_def:
-                for arg_name in [arg.arg for arg in func_def.args.args]:
-                    if arg_name in parsed:
-                        args.append(parsed[arg_name])
-            return args if args else [parsed]
-        elif isinstance(parsed, list):
-            return parsed
-        else:
-            return [parsed]
-    except:
-        pass
-    
-    # Fallback: treat as raw input
-    return [input_data]
-
-# Parse the input
-args = parse_input(input_data)
-
-# Call the solution function
-try:
-    result = {func_name}(*args)
-    # Print result in expected format
-    if isinstance(result, (list, dict)):
-        print(json.dumps(result))
-    else:
-        print(result)
-except Exception as e:
-    print(f"Error: {{str(e)}}", file=sys.stderr)
-    sys.exit(1)
-'''
-
-    # Combine user code with test harness
-    full_code = code + "\n" + test_harness
-
-    # Write to temp file
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-        f.write(full_code)
-        temp_path = f.name
-
-    try:
-        # Run with input data
-        result = subprocess.run(
-            [sys.executable, temp_path], 
-            input=input_data, 
-            capture_output=True, 
-            text=True, 
-            timeout=10  # CodeChef typically has 1-2 second limits
-        )
-        
-        if result.stderr:
-            return {"output": "", "error": result.stderr.strip()}
-            
-        output = result.stdout.strip()
-        if not output:
-            return {"output": "", "error": "No output produced"}
-            
-        return {"output": output, "error": None}
-        
-    except subprocess.TimeoutExpired:
-        return {"output": "", "error": "Time Limit Exceeded"}
-    except Exception as e:
-        return {"output": "", "error": str(e)}
-    finally:
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
-
-
-def execute_python_script(code: str, input_data: str):
-    # For script-style code (no function definition)
-    test_harness = f'''
-import sys
-import json
-
-# Inject input as stdin simulation
-input_data = """{input_data}"""
-
-# Replace sys.stdin read with our input
-import io
-sys.stdin = io.StringIO(input_data)
-
-# Execute user code
-{code}
-'''
-
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-        f.write(test_harness)
-        temp_path = f.name
-
-    try:
-        result = subprocess.run(
-            [sys.executable, temp_path], 
-            capture_output=True, 
-            text=True, 
-            timeout=10
-        )
-        
-        if result.stderr:
-            return {"output": "", "error": result.stderr.strip()}
-            
-        output = result.stdout.strip()
-        return {"output": output, "error": None}
-        
-    except subprocess.TimeoutExpired:
-        return {"output": "", "error": "Time Limit Exceeded"}
-    except Exception as e:
-        return {"output": "", "error": str(e)}
-    finally:
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(url, json=payload, timeout=15.0)
+            if response.status_code == 200:
+                data = response.json()
+                return {"output": data.get("output", ""), "error": data.get("error")}
+            else:
+                return {"output": "", "error": f"Execution Engine Error: {response.text}"}
+        except Exception as e:
+            return {"output": "", "error": f"Connection Error: {str(e)}"}
 
 
 @router.post("/", response_model=schemas.Submission)
