@@ -16,6 +16,7 @@ import ast
 import json
 import time
 import httpx
+import re
 
 from config import settings
 
@@ -42,6 +43,73 @@ def normalize_output_comparison(actual: str, expected: str) -> bool:
 
 
 async def execute_code(code: str, language: str, input_data: str):
+    # Pre-process code based on language requirements before sending to engine
+    if language == "python":
+        try:
+            tree = ast.parse(code)
+            func_def = next((node for node in tree.body if isinstance(node, ast.FunctionDef)), None)
+            
+            if func_def:
+                func_name = func_def.name
+                # Append harness that extracts input, calls function, and prints output
+                # We inject input_data directly into the script as a hard-coded string to bypass stdin entirely
+                harness = f'''
+import sys
+import json
+import re
+
+# Simulated Input Data
+raw_input_data = """{input_data.strip()}"""
+
+def parse_input(input_str):
+    nums_match = re.search(r'nums\\s*=\\s*\\[(.*?)\\]', input_str)
+    target_match = re.search(r'target\\s*=\\s*(\\d+)', input_str)
+    if nums_match and target_match:
+        nums_str = nums_match.group(1)
+        nums = [int(x.strip()) for x in nums_str.split(',') if x.strip()]
+        target = int(target_match.group(1))
+        return [nums, target]
+    try:
+        parsed = json.loads(input_str)
+        if isinstance(parsed, dict) and 'nums' in parsed and 'target' in parsed:
+            return [parsed['nums'], parsed['target']]
+        elif isinstance(parsed, list):
+            return parsed
+        else:
+            return [parsed]
+    except:
+        pass
+    return [input_str]
+
+args = parse_input(raw_input_data)
+try:
+    result = {func_name}(*args)
+    if isinstance(result, (list, dict)):
+        print(json.dumps(result).replace(" ", ""))
+    else:
+        print(result)
+except Exception as e:
+    print(f"Error: {{str(e)}}", file=sys.stderr)
+    sys.exit(1)
+'''
+                code = code + "\n" + harness
+            else:
+                # Script style logic (no function defined)
+                script_harness = f'''
+import sys
+import io
+import json
+
+raw_input_data = """{input_data.strip()}"""
+sys.stdin = io.StringIO(raw_input_data)
+
+'''
+                code = script_harness + code
+        except Exception as e:
+            # Let the syntax error pass to Cloud Run execution engine or return immediately
+            # Using the raw code will just let Python itself fail with a detailed SyntaxError traceback
+            pass
+            
     url = f"{settings.EXECUTION_ENGINE_URL}/execute"
     payload = {
         "language": language,
