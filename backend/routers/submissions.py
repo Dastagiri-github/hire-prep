@@ -9,6 +9,9 @@ import schemas
 
 router = APIRouter(
     prefix="/submissions",
+    tags=["submissions"]
+)
+
 import ast
 import json
 import time

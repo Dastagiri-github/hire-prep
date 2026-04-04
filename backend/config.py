@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     
     # Execution Engine
-    EXECUTION_ENGINE_URL: str = "http://localhost:8080"
+    EXECUTION_ENGINE_URL: str = "https://hire-prep-execution-engine-yz4wyafnxq-uc.a.run.app"
     
     # CORS - set CORS_ORIGINS as a JSON array in Railway env vars for production
     # e.g. ["https://hire-prep-beta.vercel.app","https://hire-prep-git-master-dastagiri-githubs-projects.vercel.app"]
