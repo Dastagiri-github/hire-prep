@@ -151,34 +151,8 @@ rl.on('close', () => {
         const handler = (e: any) => {
             setEditorTheme(e?.detail === 'light' ? 'vs' : 'vs-dark');
         };
+        // Event listeners for theme changes
         window.addEventListener('themechange', handler);
-
-        // Prevent copy-paste keyboard shortcuts globally in the editor
-        const preventCopyPaste = (e: KeyboardEvent) => {
-            // Check if the event target is within the editor
-            const target = e.target as HTMLElement;
-            if (target.closest('.monaco-editor')) {
-                // Prevent copy, cut, paste, select all
-                if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 'a'].includes(e.key.toLowerCase())) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }
-            }
-        };
-
-        // Prevent context menu on the editor
-        const preventContextMenu = (e: MouseEvent) => {
-            const target = e.target as HTMLElement;
-            if (target.closest('.monaco-editor')) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-        };
-
-        document.addEventListener('keydown', preventCopyPaste, true);
-        document.addEventListener('contextmenu', preventContextMenu, true);
 
         const checkHealth = async () => {
             try {
@@ -209,8 +183,6 @@ rl.on('close', () => {
 
         return () => {
             window.removeEventListener('themechange', handler);
-            document.removeEventListener('keydown', preventCopyPaste, true);
-            document.removeEventListener('contextmenu', preventContextMenu, true);
         };
     }, [resolvedParams.id]);
 
@@ -625,19 +597,7 @@ rl.on('close', () => {
                                     onChange={(value) => setCode(value || '')}
                                     theme={editorTheme}
                                     onMount={(editor, monaco) => {
-                                        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => { });
-                                        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => { });
-                                        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => { });
-                                        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => { });
-                                        editor.onDidLayoutChange(() => {
-                                            const editorDomNode = editor.getDomNode();
-                                            if (editorDomNode) {
-                                                editorDomNode.addEventListener('contextmenu', (e: MouseEvent) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                });
-                                            }
-                                        });
+                                        // Empty onMount as restrictions have been lifted
                                     }}
                                     options={{
                                         minimap: { enabled: false },
@@ -651,7 +611,7 @@ rl.on('close', () => {
                                         cursorBlinking: "smooth",
                                         wordWrap: "on",
                                         automaticLayout: true,
-                                        contextmenu: false,
+                                        contextmenu: true,
                                         readOnly: false,
                                     }}
                                 />
