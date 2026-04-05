@@ -104,8 +104,20 @@ def get_user_stats(
                  difficulty_breakdown[difficulty] = 1
 
             # Topics/Tags
+            import ast
+            def safe_parse(val):
+                if not val: return []
+                if isinstance(val, list): return val
+                if isinstance(val, str):
+                    try:
+                        parsed = ast.literal_eval(val)
+                        if isinstance(parsed, list): return parsed
+                    except: pass
+                return []
+
             if log.problem_type == "coding":
-                tags = log.tags or coding_problems.get(log.problem_id, [])
+                raw_tags = log.tags or coding_problems.get(log.problem_id, [])
+                tags = safe_parse(raw_tags)
                 for tag in tags:
                     topic_counts[tag] = topic_counts.get(tag, 0) + 1
             elif log.problem_type == "sql":
