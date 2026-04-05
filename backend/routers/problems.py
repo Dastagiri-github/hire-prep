@@ -64,12 +64,7 @@ def read_problems(
     return problems
 
 
-@router.get("/{problem_id}", response_model=schemas.Problem)
-def read_problem(problem_id: int, db: Session = Depends(database.get_db)):
-    db_problem = crud.get_problem(db, problem_id=problem_id)
-    if db_problem is None:
-        raise HTTPException(status_code=404, detail="Problem not found")
-    return db_problem
+
 
 
 @router.get("/companies/list", response_model=List[dict])
@@ -197,3 +192,10 @@ def get_daily_challenge_status(
         return {"solved": True, "status": log.status}
         
     return {"solved": False, "status": "Not Solved"}
+
+@router.get("/{problem_id}", response_model=schemas.Problem)
+def read_problem(problem_id: int, db: Session = Depends(database.get_db)):
+    db_problem = crud.get_problem(db, problem_id=problem_id)
+    if db_problem is None:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    return db_problem
