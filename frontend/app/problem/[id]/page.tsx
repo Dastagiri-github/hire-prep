@@ -1,8 +1,13 @@
 "use client";
 import { useEffect, useState, use } from 'react';
 import api from '@/lib/api';
-import Editor from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
 import { Play, RotateCcw, CheckCircle2, AlertCircle, Terminal, ChevronDown, ChevronUp, Code2, Cpu, Timer, ChevronLeft, ChevronRight, Send, Clock, Trophy, Users, Star, BookOpen, Target } from 'lucide-react';
+
+const Editor = dynamic(() => import('@monaco-editor/react'), { 
+    ssr: false, 
+    loading: () => <div className="h-full w-full bg-[#1e1e1e]" />
+});
 import ThemeToggle from '@/components/ThemeToggle';
 import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';

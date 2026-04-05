@@ -17,8 +17,13 @@ import json
 import time
 import httpx
 import re
+import asyncio
 
 from config import settings
+
+# Global pre-configured HTTP client with connection pooling
+# This avoids TCP handshakes for every test case execution
+http_client = httpx.AsyncClient(limits=httpx.Limits(max_keepalive_connections=100))
 
 
 def normalize_output_comparison(actual: str, expected: str) -> bool:
@@ -117,16 +122,15 @@ sys.stdin = io.StringIO(raw_input_data)
         "input": input_data
     }
     
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(url, json=payload, timeout=15.0)
-            if response.status_code == 200:
-                data = response.json()
-                return {"output": data.get("output", ""), "error": data.get("error")}
-            else:
-                return {"output": "", "error": f"Execution Engine Error: {response.text}"}
-        except Exception as e:
-            return {"output": "", "error": f"Connection Error: {str(e)}"}
+    try:
+        response = await http_client.post(url, json=payload, timeout=15.0)
+        if response.status_code == 200:
+            data = response.json()
+            return {"output": data.get("output", ""), "error": data.get("error")}
+        else:
+            return {"output": "", "error": f"Execution Engine Error: {response.text}"}
+    except Exception as e:
+        return {"output": "", "error": f"Connection Error: {str(e)}"}
 
 
 @router.post("/", response_model=schemas.Submission)
@@ -150,54 +154,53 @@ async def submit_code(
     actual_output = None
     expected_output = None
 
-    for idx, case in enumerate(test_cases):
+    async def process_test_case(idx: int, case: dict):
         input_val = case.get("input", "")
-        expected_output = case.get("output", "").strip()
-
-        # Execute code for each test case
+        exp_out = case.get("output", "").strip()
         start_time = time.time()
-        
+
         # Special case for demo
         if submission.code.strip() == "solution":
-            actual_output = expected_output
-            execution_time = 0.1
-            test_passed = True
-        else:
-            result = await execute_code(submission.code, submission.language, input_val)
-            execution_time = time.time() - start_time
-            
-            if result["error"]:
-                test_passed = False
-                actual_output = result["error"]
-                failure_details = {
-                    "actual_output": result["error"],
-                    "expected_output": expected_output,
-                    "message": f"Error at test case {idx + 1}: {input_val}",
-                }
-                all_passed = False
-            else:
-                actual_output = result["output"].strip()
-                test_passed = normalize_output_comparison(actual_output, expected_output)
-                
-                if not test_passed:
-                    failure_details = {
-                        "actual_output": actual_output,
-                        "expected_output": expected_output,
-                        "message": f"Wrong answer at test case {idx + 1}",
-                    }
-                    all_passed = False
+            return idx, input_val, exp_out, exp_out, 0.1, True, {}
+        
+        result = await execute_code(submission.code, submission.language, input_val)
+        execution_time = time.time() - start_time
+        
+        if result["error"]:
+            fail_msg = {
+                "actual_output": result["error"],
+                "expected_output": exp_out,
+                "message": f"Error at test case {idx + 1}: {input_val}",
+            }
+            return idx, input_val, exp_out, result["error"], execution_time, False, fail_msg
+        
+        act_out = result["output"].strip()
+        is_passed = normalize_output_comparison(act_out, exp_out)
+        
+        fail_msg = {}
+        if not is_passed:
+            fail_msg = {
+                "actual_output": act_out,
+                "expected_output": exp_out,
+                "message": f"Wrong answer at test case {idx + 1}",
+            }
+        return idx, input_val, exp_out, act_out, execution_time, is_passed, fail_msg
 
-        # Store individual test case result
+    tasks = [process_test_case(idx, case) for idx, case in enumerate(test_cases)]
+    results = await asyncio.gather(*tasks)
+
+    for idx, input_val, exp_out, act_out, exec_time, test_passed, fail_msg in sorted(results, key=lambda x: x[0]):
         test_case_results.append({
             "input": input_val,
-            "expected_output": expected_output,
-            "actual_output": actual_output,
+            "expected_output": exp_out,
+            "actual_output": act_out,
             "passed": test_passed,
-            "execution_time": round(execution_time * 1000, 2)  # Convert to ms
+            "execution_time": round(exec_time * 1000, 2)
         })
 
-        # If any test failed, we can stop early for Wrong Answer
         if not test_passed:
+            all_passed = False
+            failure_details = fail_msg
             break
 
     status = "Accepted" if all_passed else "Wrong Answer"
