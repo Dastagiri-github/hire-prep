@@ -107,10 +107,12 @@ export default function Dashboard() {
 
       try {
         // Parallel fetching for performance with individual error handling to prevent complete failure
-        const [recRes, statsRes, solvedRes] = await Promise.all([
+        const [recRes, statsRes, solvedRes, dailyRes, statusRes] = await Promise.all([
           api.get('/recommendations/').catch(e => ({ data: { problems: [] } })),
           api.get('/stats/user').catch(e => ({ data: null })),
-          api.get('/auth/solved-problems').catch(e => ({ data: [] }))
+          api.get('/auth/solved-problems').catch(e => ({ data: [] })),
+          api.get('/problems/daily').catch(e => ({ data: null })),
+          api.get('/problems/daily/status').catch(e => ({ data: { solved: false } }))
         ]);
 
         setRecommendedProblems(recRes.data.problems || []);
@@ -132,15 +134,11 @@ export default function Dashboard() {
         setStats(statsRes.data);
         setSolvedProblems(solvedRes.data);
 
-        // Fetch Daily Challenge
-        try {
-          const [dailyRes, statusRes] = await Promise.all([
-            api.get('/problems/daily'),
-            api.get('/problems/daily/status')
-          ]);
+        // Set Daily Challenge
+        if (dailyRes.data) {
           setDailyChallenge(dailyRes.data);
-          setDailySolved(statusRes.data.solved);
-        } catch (e) {
+          setDailySolved(statusRes.data.solved || false);
+        } else {
           console.log("No daily challenge assigned today");
         }
 

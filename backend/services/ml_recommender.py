@@ -7,7 +7,7 @@ difficulty appropriateness (ZPD), and company relevance.
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 
 import models
 from services.feature_engineering import build_user_profile
@@ -46,7 +46,9 @@ def get_recommendations(
     target_companies = user.target_companies or []
 
     # 3. Get all problems
-    all_problems = db.query(models.Problem).all()
+    all_problems = db.query(models.Problem).options(
+        load_only(models.Problem.id, models.Problem.title, models.Problem.difficulty, models.Problem.tags, models.Problem.companies)
+    ).all()
     if not all_problems:
         return []
 
@@ -281,7 +283,9 @@ def get_learning_path(
         solved_ids.add(sub.problem_id)
 
     # Get all problems matching focus tags
-    all_problems = db.query(models.Problem).all()
+    all_problems = db.query(models.Problem).options(
+        load_only(models.Problem.id, models.Problem.title, models.Problem.difficulty, models.Problem.tags, models.Problem.companies)
+    ).all()
     candidates = []
     for problem in all_problems:
         if problem.id in solved_ids:

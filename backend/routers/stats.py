@@ -81,7 +81,15 @@ def get_user_stats(
     topic_counts = {}
     
     # Pre-fetch tags for problems since performance_logs tags might be empty/snapshot based
-    coding_problems = {p.id: p.tags for p in db.query(models.Problem).all()}
+    # Optimization: Only load tags for problems the user actually solved
+    solved_coding_ids = [log.problem_id for log in performance_logs if log.problem_type == "coding"]
+    coding_problems = {}
+    if solved_coding_ids:
+        # Batch fetch only needed tags to prevent dumping entire Problem table into memory
+        fetched_problems = db.query(models.Problem.id, models.Problem.tags).filter(
+            models.Problem.id.in_(solved_coding_ids)
+        ).all()
+        coding_problems = {pid: tags for pid, tags in fetched_problems}
 
     for log in performance_logs:
         prob_key = (log.problem_type, log.problem_id)
@@ -193,18 +201,26 @@ def get_user_stats(
         .all()
     )
     
+    # Optimization: Batch fetch problem titles
+    prob_ids_by_type = {"coding": set(), "sql": set(), "aptitude": set()}
+    for log in recent_logs:
+        if log.problem_type in prob_ids_by_type:
+            prob_ids_by_type[log.problem_type].add(log.problem_id)
+            
+    title_map = {"coding": {}, "sql": {}, "aptitude": {}}
+    if prob_ids_by_type["coding"]:
+        cp = db.query(models.Problem.id, models.Problem.title).filter(models.Problem.id.in_(prob_ids_by_type["coding"])).all()
+        title_map["coding"] = {pid: title for pid, title in cp}
+    if prob_ids_by_type["sql"]:
+        sp = db.query(models.SQLProblem.id, models.SQLProblem.title).filter(models.SQLProblem.id.in_(prob_ids_by_type["sql"])).all()
+        title_map["sql"] = {pid: title for pid, title in sp}
+    if prob_ids_by_type["aptitude"]:
+        ap = db.query(models.AptitudeProblem.id, models.AptitudeProblem.title).filter(models.AptitudeProblem.id.in_(prob_ids_by_type["aptitude"])).all()
+        title_map["aptitude"] = {pid: title for pid, title in ap}
+    
     recent_submissions = []
     for log in recent_logs:
-        title = "Unknown Problem"
-        if log.problem_type == "coding":
-             prob = db.query(models.Problem).filter(models.Problem.id == log.problem_id).first()
-             if prob: title = prob.title
-        elif log.problem_type == "sql":
-             prob = db.query(models.SQLProblem).filter(models.SQLProblem.id == log.problem_id).first()
-             if prob: title = prob.title
-        elif log.problem_type == "aptitude":
-             prob = db.query(models.AptitudeProblem).filter(models.AptitudeProblem.id == log.problem_id).first()
-             if prob: title = prob.title
+        title = title_map.get(log.problem_type, {}).get(log.problem_id, "Unknown Problem")
 
         recent_submissions.append({
             "id": log.id,
